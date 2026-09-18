@@ -69,6 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Update setting dependency logic to stop incompatible settings being set / returned.
   - Get Languages as a string array instead of comma-separated values.
     Fix issue [#76](https://github.com/dsccommunity/UpdateServicesDsc/issues/76)
+  - Updated parameter descriptions that still described the old behaviour of
+    omitting a parameter to force a default, to describe how to explicitly
+    turn a setting off instead.
 - Stopped PDT.psm1 returning boolean 'true' alongside normal output when creating a process, now throws if the process fails to start.
 
 ## [1.3.0] - 2025-12-05

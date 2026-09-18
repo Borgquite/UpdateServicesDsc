@@ -451,7 +451,8 @@ function Get-TargetResource
         Provide feedback to Microsoft to help improve WSUS
 
     .PARAMETER UpstreamServerName
-        Name of another WSUS server to retrieve content from
+        Name of another WSUS server to retrieve content from.
+        Set as empty string ('') to synchronize from Microsoft Update
 
     .PARAMETER UpstreamServerPort
         If getting content from another server, port for traffic
@@ -463,13 +464,15 @@ function Get-TargetResource
         Boolean to specify whether to retrieve content from another server
 
     .PARAMETER ProxyServerName
-        Host name of proxy server
+        Host name of proxy server.
+        Set as empty string ('') for no proxy
 
     .PARAMETER ProxyServerPort
         Port of proxy server
 
     .PARAMETER ProxyServerCredential
-        Credential to use when authenticating to proxy server
+        Credential to use when authenticating to proxy server.
+        Set as null for anonymous access
 
     .PARAMETER ProxyServerBasicAuthentication
         Use basic auth for proxy
@@ -518,17 +521,18 @@ function Get-TargetResource
 
     .PARAMETER ClientTargetingMode
         An enumerated value that describes how the Target Groups are populated.
-        Accepts 'Client'(default) or 'Server'.
+        Accepts 'Client' or 'Server'.
 
     .PARAMETER DoDetailedRollup
         The downstream server should roll up detailed computer and update status information
 
     .PARAMETER SyncNotificationRecipients
-        E-mail addresses of those to whom notification of new updates should be sent, omit for no notifications
+        E-mail addresses of those to whom notification of new updates should be sent.
+        Set as an empty array to turn notifications off
 
     .PARAMETER StatusNotificationFrequency
         The frequency with which e-mail notifications should be sent
-        Accepts 'Daily'(default) or 'Weekly'
+        Accepts 'Daily' or 'Weekly'
 
     .PARAMETER StatusNotificationTimeOfDay
         The time of the day e-mail notifications should be sent (as UTC)
@@ -536,7 +540,8 @@ function Get-TargetResource
         The valid range is 00:00:00 to 23:59:59 inclusive
 
     .PARAMETER StatusNotificationRecipients
-        E-mail addresses of those to whom update status notification should be sent, omit for no notifications
+        E-mail addresses of those to whom update status notification should be sent.
+        Set as an empty array to turn notifications off
 
     .PARAMETER EmailLanguage
         E-mail language setting
@@ -554,7 +559,8 @@ function Get-TargetResource
         The e-mail address of the sender
 
     .PARAMETER EmailServerCredential
-        The e-mail server credential, omit for anonymous.
+        The e-mail server credential.
+        Set as null for anonymous access.
 
     .PARAMETER IIsDynamicCompression
         Use Xpress Encoding to compress update metadata.
@@ -1451,7 +1457,8 @@ function Set-TargetResource
         Provide feedback to Microsoft to help improve WSUS
 
     .PARAMETER UpstreamServerName
-        Name of another WSUS server to retrieve content from
+        Name of another WSUS server to retrieve content from.
+        Set as empty string ('') to synchronize from Microsoft Update
 
     .PARAMETER UpstreamServerPort
         If getting content from another server, port for traffic
@@ -1463,13 +1470,15 @@ function Set-TargetResource
         Boolean to specify whether to retrieve content from another server
 
     .PARAMETER ProxyServerName
-        Host name of proxy server
+        Host name of proxy server.
+        Set as empty string ('') for no proxy
 
     .PARAMETER ProxyServerPort
         Port of proxy server
 
     .PARAMETER ProxyServerCredential
-        Credential to use when authenticating to proxy server
+        Credential to use when authenticating to proxy server.
+        Set as null for anonymous access
 
     .PARAMETER ProxyServerBasicAuthentication
         Use basic auth for proxy
@@ -1519,17 +1528,18 @@ function Set-TargetResource
 
     .PARAMETER ClientTargetingMode
         An enumerated value that describes how the Target Groups are populated.
-        Accepts 'Client'(default) or 'Server'.
+        Accepts 'Client' or 'Server'.
 
     .PARAMETER DoDetailedRollup
         The downstream server should roll up detailed computer and update status information
 
     .PARAMETER SyncNotificationRecipients
-        E-mail addresses of those to whom notification of new updates should be sent, omit for no notifications
+        E-mail addresses of those to whom notification of new updates should be sent.
+        Set as an empty array to turn notifications off
 
     .PARAMETER StatusNotificationFrequency
         The frequency with which e-mail notifications should be sent
-        Accepts 'Daily'(default) or 'Weekly'
+        Accepts 'Daily' or 'Weekly'
 
     .PARAMETER StatusNotificationTimeOfDay
         The time of the day e-mail notifications should be sent (as UTC)
@@ -1537,7 +1547,8 @@ function Set-TargetResource
         The valid range is 00:00:00 to 23:59:59 inclusive
 
     .PARAMETER StatusNotificationRecipients
-        E-mail addresses of those to whom update status notification should be sent, omit for no notifications
+        E-mail addresses of those to whom update status notification should be sent.
+        Set as an empty array to turn notifications off
 
     .PARAMETER EmailLanguage
         E-mail language setting
@@ -1555,7 +1566,8 @@ function Set-TargetResource
         The e-mail address of the sender
 
     .PARAMETER EmailServerCredential
-        The e-mail server credential, omit for anonymous.
+        The e-mail server credential.
+        Set as null for anonymous access.
 
     .PARAMETER IIsDynamicCompression
         Use Xpress Encoding to compress update metadata.
