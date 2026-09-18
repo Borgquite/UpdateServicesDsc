@@ -66,6 +66,7 @@ function Get-TargetResource
                     }
                 }
             }
+            $TimeOfDay = $null
             $Triggers = @($Task.Triggers)
             if ($Triggers.Count -ge 1)
             {

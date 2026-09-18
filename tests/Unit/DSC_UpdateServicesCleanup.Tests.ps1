@@ -98,6 +98,38 @@ Describe 'DSC_UpdateServicesCleanup\Get-TargetResource' -Tag 'Get' {
         }
     }
 
+    Context 'When the scheduled task trigger has an unparseable StartBoundary' {
+        BeforeAll {
+            Mock -CommandName Get-ScheduledTask -MockWith {
+                @{
+                    State    = 'Enabled'
+                    Actions  = @{
+                        Execute   = "$($env:SystemRoot)\System32\WindowsPowerShell\v1.0\powershell.exe"
+                        Arguments = 'foo"$DeclineSupersededUpdates = $True;$DeclineExpiredUpdates = $True;$CleanupObsoleteUpdates = $True;$CompressUpdates = $True;$CleanupObsoleteComputers = $True;$CleanupUnneededContentFiles = $True;$CleanupLocalPublishedContentFiles = $True'
+                    }
+                    Triggers = @(
+                        @{
+                            StartBoundary = '20160101T04:00:00'
+                        }
+                    )
+                }
+            }
+        }
+
+        It 'Should not throw, and should return an empty TimeOfDay' {
+            InModuleScope -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
+                $result = Get-TargetResource -Ensure 'Present'
+
+                $result.Ensure | Should -Be 'Present'
+                $result.TimeOfDay | Should -BeNullOrEmpty
+            }
+
+            Should -Invoke -CommandName Get-ScheduledTask -Exactly -Times 1 -Scope It
+        }
+    }
+
     Context 'When the resource is not in the desired state' {
         Context 'When the resource is not configured' {
             BeforeAll {

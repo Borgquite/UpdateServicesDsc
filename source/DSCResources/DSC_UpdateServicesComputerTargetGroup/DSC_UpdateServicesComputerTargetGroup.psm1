@@ -209,14 +209,6 @@ function Set-TargetResource
                         }
                         catch
                         {
-                            $childId = if ($ChildComputerTargetGroup)
-                            {
-                                $ChildComputerTargetGroup.Id.Guid
-                            }
-                            else
-                            {
-                                'N/A'
-                            }
                             New-InvalidOperationException -Message (
                                 $script:localizedData.DeleteComputerTargetGroupFailed -f $Name, $childId, $Path
                             ) -ErrorRecord $_

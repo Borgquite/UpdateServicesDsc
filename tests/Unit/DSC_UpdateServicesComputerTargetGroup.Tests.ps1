@@ -554,4 +554,70 @@ Describe 'DSC_UpdateServicesComputerTargetGroup\Set-TargetResource' -Tag 'Set' {
             Should -Invoke -CommandName Get-WsusServer -Times 1 -Exactly -Scope It
         }
     }
+
+    Context 'When the Computer Target Group cannot be deleted' {
+        BeforeAll {
+            Mock -CommandName Get-WsusServer -MockWith {
+                $childComputerTargetGroup = [pscustomobject] @{
+                    Name = 'Web'
+                    Id   = [pscustomobject] @{
+                        GUID = 'f4aa59c7-e6a0-4e6d-97b0-293d00a0dc60'
+                    }
+                }
+                $childComputerTargetGroup | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+                    throw 'An error occurred'
+                }
+
+                $computerTargetGroup = [pscustomobject] @{
+                    Name              = 'Servers'
+                    Id                = [pscustomobject] @{
+                        GUID = '14adceba-ddf3-4299-9c1a-e4cf8bd56c47'
+                    }
+                    ParentTargetGroup = [pscustomobject] @{
+                        Name = 'All Computers'
+                    }
+                    ChildTargetGroup  = $childComputerTargetGroup
+                }
+                $computerTargetGroup | Add-Member -MemberType ScriptMethod -Name GetParentTargetGroup -Value {
+                    return $this.ParentTargetGroup
+                }
+                $computerTargetGroup | Add-Member -MemberType ScriptMethod -Name GetChildTargetGroups -Value {
+                    return $this.ChildTargetGroup
+                }
+
+                # 'All Computers' throws when GetParentTargetGroup() is called
+                $computerTargetGroup.ParentTargetGroup | Add-Member -MemberType ScriptMethod -Name GetParentTargetGroup -Value {
+                    throw 'No parent'
+                }
+
+                $wsusServer = [pscustomobject] @{
+                    Name                = 'ServerName'
+                    ComputerTargetGroup = $computerTargetGroup
+                }
+                $wsusServer | Add-Member -MemberType ScriptMethod -Name GetComputerTargetGroups -Value {
+                    return @($this.ComputerTargetGroup)
+                }
+
+                return $wsusServer
+            }
+        }
+
+        It 'Should throw the correct exception' {
+            InModuleScope -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
+                $errorRecord = Get-InvalidOperationRecord -Message (
+                    $script:localizedData.DeleteComputerTargetGroupFailed -f 'Web', 'f4aa59c7-e6a0-4e6d-97b0-293d00a0dc60', 'All Computers/Servers'
+                )
+
+                $testParams = @{
+                    Name   = 'Web'
+                    Path   = 'All Computers/Servers'
+                    Ensure = 'Absent'
+                }
+
+                { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage ($errorRecord.Exception.Message + '*')
+            }
+        }
+    }
 }
