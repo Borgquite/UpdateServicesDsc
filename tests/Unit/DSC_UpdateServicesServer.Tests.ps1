@@ -1064,113 +1064,121 @@ Describe 'DSC_UpdateServicesServer\Set-TargetResource' -Tag 'Set' {
     }
 
     Context 'When a dependent setting is specified but the setting it depends on is not' {
-        It 'Should apply GetContentFromMU using the upstream server already configured on the server' {
-            InModuleScope -ScriptBlock {
-                Set-StrictMode -Version 1.0
+        Context 'When an upstream server is already configured on the server' {
+            BeforeAll {
+                # An upstream server is already configured on the server
+                $script:mockConfiguration = @{
+                    OobeInitialized           = $true
+                    SyncFromMicrosoftUpdate   = $false
+                    IsReplicaServer           = $false
+                    AllUpdateLanguagesEnabled = $true
+                }
+                $script:mockConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
 
-                $script:mockConfiguration = $null
+                $mockConfigurationReference = $script:mockConfiguration
 
                 Mock -CommandName Get-WsusServer -MockWith {
                     $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
 
+                    $mockWsusServer | Add-Member -Force -MemberType NoteProperty -Name MockConfiguration -Value $mockConfigurationReference
                     $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetConfiguration -Value {
-                        if (-not $script:mockConfiguration)
-                        {
-                            # An upstream server is already configured on the server
-                            $script:mockConfiguration = @{
-                                OobeInitialized           = $true
-                                SyncFromMicrosoftUpdate   = $false
-                                IsReplicaServer           = $false
-                                AllUpdateLanguagesEnabled = $true
-                            }
-                            $script:mockConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
-                        }
-
-                        return $script:mockConfiguration
+                        return $this.MockConfiguration
                     }
 
                     return $mockWsusServer
                 }
+            }
 
-                $testParams = @{
-                    Ensure           = 'Present'
-                    ContentDir       = 'C:\WSUSContent\'
-                    GetContentFromMU = $true
+            It 'Should apply GetContentFromMU using the upstream server already configured on the server' {
+                InModuleScope -ScriptBlock {
+                    Set-StrictMode -Version 1.0
+
+                    $testParams = @{
+                        Ensure           = 'Present'
+                        ContentDir       = 'C:\WSUSContent\'
+                        GetContentFromMU = $true
+                    }
+
+                    $null = Set-TargetResource @testParams
                 }
-
-                $null = Set-TargetResource @testParams
 
                 $script:mockConfiguration.GetContentFromMU | Should -BeTrue
             }
         }
 
-        It 'Should apply EmailServerCredential using the SMTP host already configured on the server' {
-            InModuleScope -ScriptBlock {
-                Set-StrictMode -Version 1.0
+        Context 'When an SMTP host is already configured on the server' {
+            BeforeAll {
+                # An SMTP host is already configured on the server
+                $script:mockEmailConfiguration = @{
+                    SmtpHostName                     = 'smtp.contoso.com'
+                    SmtpServerRequiresAuthentication = $false
+                    SetSmtpUserPasswordCallCount     = 0
+                }
+                $script:mockEmailConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
+                $script:mockEmailConfiguration | Add-Member -MemberType ScriptMethod -Name SetSmtpUserPassword -Value {
+                    $this.SetSmtpUserPasswordCallCount++
+                }
 
-                $script:mockEmailConfiguration = $null
+                $mockEmailConfigurationReference = $script:mockEmailConfiguration
 
                 Mock -CommandName Get-WsusServer -MockWith {
                     $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
 
+                    $mockWsusServer | Add-Member -Force -MemberType NoteProperty -Name MockEmailConfiguration -Value $mockEmailConfigurationReference
                     $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetEmailNotificationConfiguration -Value {
-                        if (-not $script:mockEmailConfiguration)
-                        {
-                            # An SMTP host is already configured on the server
-                            $script:mockEmailConfiguration = @{
-                                SmtpHostName                     = 'smtp.contoso.com'
-                                SmtpServerRequiresAuthentication = $false
-                            }
-                            $script:mockEmailConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
-                            $script:mockEmailConfiguration | Add-Member -MemberType ScriptMethod -Name SetSmtpUserPassword -Value {}
-                        }
-
-                        return $script:mockEmailConfiguration
+                        return $this.MockEmailConfiguration
                     }
 
                     return $mockWsusServer
                 }
+            }
 
-                $testParams = @{
-                    Ensure                = 'Present'
-                    EmailServerCredential = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+            It 'Should apply EmailServerCredential using the SMTP host already configured on the server' {
+                InModuleScope -ScriptBlock {
+                    Set-StrictMode -Version 1.0
+
+                    $testParams = @{
+                        Ensure                = 'Present'
+                        EmailServerCredential = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+                    }
+
+                    $null = Set-TargetResource @testParams
                 }
-
-                $null = Set-TargetResource @testParams
 
                 $script:mockEmailConfiguration.SmtpServerRequiresAuthentication | Should -BeTrue
                 $script:mockEmailConfiguration.SmtpUserName | Should -Be 'foo'
+                $script:mockEmailConfiguration.SetSmtpUserPasswordCallCount | Should -Be 1
             }
         }
     }
 
     Context 'When the server is already a replica and UpstreamServerReplica is not specified' {
+        BeforeAll {
+            $script:mockReplicaConfiguration = @{
+                OobeInitialized           = $true
+                SyncFromMicrosoftUpdate   = $false
+                IsReplicaServer           = $true
+                AllUpdateLanguagesEnabled = $true
+            }
+            $script:mockReplicaConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
+
+            $mockReplicaConfigurationReference = $script:mockReplicaConfiguration
+
+            Mock -CommandName Get-WsusServer -MockWith {
+                $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
+
+                $mockWsusServer | Add-Member -Force -MemberType NoteProperty -Name MockConfiguration -Value $mockReplicaConfigurationReference
+                $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetConfiguration -Value {
+                    return $this.MockConfiguration
+                }
+
+                return $mockWsusServer
+            }
+        }
+
         It 'Should not apply UpdateImprovementProgram' {
             InModuleScope -ScriptBlock {
                 Set-StrictMode -Version 1.0
-
-                $script:mockReplicaConfiguration = $null
-
-                Mock -CommandName Get-WsusServer -MockWith {
-                    $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
-
-                    $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetConfiguration -Value {
-                        if (-not $script:mockReplicaConfiguration)
-                        {
-                            $script:mockReplicaConfiguration = @{
-                                OobeInitialized           = $true
-                                SyncFromMicrosoftUpdate   = $false
-                                IsReplicaServer           = $true
-                                AllUpdateLanguagesEnabled = $true
-                            }
-                            $script:mockReplicaConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
-                        }
-
-                        return $script:mockReplicaConfiguration
-                    }
-
-                    return $mockWsusServer
-                }
 
                 $testParams = @{
                     Ensure                   = 'Present'
@@ -1178,41 +1186,44 @@ Describe 'DSC_UpdateServicesServer\Set-TargetResource' -Tag 'Set' {
                 }
 
                 $null = Set-TargetResource @testParams
-
-                $script:mockReplicaConfiguration.ContainsKey('MURollupOptin') | Should -BeFalse
             }
+
+            $script:mockReplicaConfiguration.ContainsKey('MURollupOptin') | Should -BeFalse
         }
     }
 
     Context 'When ProxyServerName is not specified but a proxy server is configured on the server' {
+        BeforeAll {
+            # A proxy server is already configured on the server
+            $script:mockProxyConfiguration = @{
+                OobeInitialized           = $true
+                UseProxy                  = $true
+                AnonymousProxyAccess      = $true
+                AllUpdateLanguagesEnabled = $true
+                SetProxyPasswordCallCount = 0
+            }
+            $script:mockProxyConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
+            $script:mockProxyConfiguration | Add-Member -MemberType ScriptMethod -Name SetProxyPassword -Value {
+                $this.SetProxyPasswordCallCount++
+            }
+
+            $mockProxyConfigurationReference = $script:mockProxyConfiguration
+
+            Mock -CommandName Get-WsusServer -MockWith {
+                $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
+
+                $mockWsusServer | Add-Member -Force -MemberType NoteProperty -Name MockConfiguration -Value $mockProxyConfigurationReference
+                $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetConfiguration -Value {
+                    return $this.MockConfiguration
+                }
+
+                return $mockWsusServer
+            }
+        }
+
         It 'Should apply ProxyServerCredential' {
             InModuleScope -ScriptBlock {
                 Set-StrictMode -Version 1.0
-
-                $script:mockProxyConfiguration = $null
-
-                Mock -CommandName Get-WsusServer -MockWith {
-                    $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
-
-                    $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetConfiguration -Value {
-                        if (-not $script:mockProxyConfiguration)
-                        {
-                            # A proxy server is already configured on the server
-                            $script:mockProxyConfiguration = @{
-                                OobeInitialized           = $true
-                                UseProxy                  = $true
-                                AnonymousProxyAccess      = $true
-                                AllUpdateLanguagesEnabled = $true
-                            }
-                            $script:mockProxyConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
-                            $script:mockProxyConfiguration | Add-Member -MemberType ScriptMethod -Name SetProxyPassword -Value {}
-                        }
-
-                        return $script:mockProxyConfiguration
-                    }
-
-                    return $mockWsusServer
-                }
 
                 $testParams = @{
                     Ensure                = 'Present'
@@ -1220,37 +1231,38 @@ Describe 'DSC_UpdateServicesServer\Set-TargetResource' -Tag 'Set' {
                 }
 
                 $null = Set-TargetResource @testParams
-
-                $script:mockProxyConfiguration.AnonymousProxyAccess | Should -BeFalse
-                $script:mockProxyConfiguration.ProxyUserName | Should -Be 'foo'
             }
+
+            $script:mockProxyConfiguration.AnonymousProxyAccess | Should -BeFalse
+            $script:mockProxyConfiguration.ProxyUserName | Should -Be 'foo'
+            $script:mockProxyConfiguration.SetProxyPasswordCallCount | Should -Be 1
         }
     }
 
     Context 'When the status notification schedule is specified without recipients' {
+        BeforeAll {
+            $script:mockScheduleConfiguration = @{
+                SendStatusNotification = $true
+            }
+            $script:mockScheduleConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
+
+            $mockScheduleConfigurationReference = $script:mockScheduleConfiguration
+
+            Mock -CommandName Get-WsusServer -MockWith {
+                $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
+
+                $mockWsusServer | Add-Member -Force -MemberType NoteProperty -Name MockEmailConfiguration -Value $mockScheduleConfigurationReference
+                $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetEmailNotificationConfiguration -Value {
+                    return $this.MockEmailConfiguration
+                }
+
+                return $mockWsusServer
+            }
+        }
+
         It 'Should apply the schedule' {
             InModuleScope -ScriptBlock {
                 Set-StrictMode -Version 1.0
-
-                $script:mockScheduleConfiguration = $null
-
-                Mock -CommandName Get-WsusServer -MockWith {
-                    $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
-
-                    $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetEmailNotificationConfiguration -Value {
-                        if (-not $script:mockScheduleConfiguration)
-                        {
-                            $script:mockScheduleConfiguration = @{
-                                SendStatusNotification = $true
-                            }
-                            $script:mockScheduleConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
-                        }
-
-                        return $script:mockScheduleConfiguration
-                    }
-
-                    return $mockWsusServer
-                }
 
                 $testParams = @{
                     Ensure                      = 'Present'
@@ -1258,9 +1270,9 @@ Describe 'DSC_UpdateServicesServer\Set-TargetResource' -Tag 'Set' {
                 }
 
                 $null = Set-TargetResource @testParams
-
-                $script:mockScheduleConfiguration.StatusNotificationFrequency | Should -Be 'Weekly'
             }
+
+            $script:mockScheduleConfiguration.StatusNotificationFrequency | Should -Be 'Weekly'
         }
     }
 }
