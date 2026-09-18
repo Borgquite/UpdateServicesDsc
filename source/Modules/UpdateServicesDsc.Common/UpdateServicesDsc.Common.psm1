@@ -22,6 +22,22 @@ $script:localizedData = Get-LocalizedData -DefaultUICulture 'en-US'
         Callers are still responsible for checking whether a WSUS server was
         retrieved at all, for example: ($null -ne $WsusServer) -and
         (Test-WsusConfigured)
+
+    .EXAMPLE
+        Test-WsusConfigured
+
+        Returns $true when the WSUS Services role has completed installation.
+
+    .INPUTS
+        None
+
+        This function does not accept pipeline input.
+
+    .OUTPUTS
+        System.Boolean
+
+        Returns $true when the WSUS Services role has completed installation,
+        otherwise $false.
 #>
 function Test-WsusConfigured
 {
