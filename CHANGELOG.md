@@ -34,10 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Use foreground priority for BITS downloads.
     - The maximum .cab file size (in megabytes) that Local Publishing will create.
     - The maximum number of concurrent update downloads.
-  - Added examples.
 - Internal UpdateServicesDsc.Common helper module
   - Added, providing Test-WsusConfigured, which reports whether the WSUS Services
     role has finished installing.
+- Added examples for all resources where they were missing.
+- Updated license links where 'master' had not been changed to 'main'.
 
 ### Fixed
 

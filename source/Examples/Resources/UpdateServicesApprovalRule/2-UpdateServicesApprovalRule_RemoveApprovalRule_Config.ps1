@@ -1,6 +1,6 @@
 <#PSScriptInfo
 .VERSION 1.0.0
-.GUID 9165945f-cd15-4865-aa3a-1ac6b6f94a8b
+.GUID 091cf051-ced5-41ee-ad2f-d4af7335e29c
 .AUTHOR DSC Community
 .COMPANYNAME DSC Community
 .COPYRIGHT DSC Community contributors. All rights reserved.
@@ -9,20 +9,23 @@
 .PROJECTURI https://github.com/dsccommunity/UpdateServicesDsc
 .ICONURI https://dsccommunity.org/images/DSC_Logo_300p.png
 .RELEASENOTES
-Updated author, copyright notice, and URLs.
+First version.
 #>
 
 #Requires -Module UpdateServicesDsc
 
 <#
     .SYNOPSIS
-        Delete a WSUS Computer Target Group.
+        Remove a WSUS approval rule.
 
     .DESCRIPTION
-        This configuration will delete a WSUS Computer Target Group named 'Web'
-        from the 'All Computers/Servers' path using the UpdateServicesDsc module.
+        This configuration removes the WSUS approval rule named
+        'Critical and Security Updates'.
+
+        Only the rule name is needed to remove a rule. Removing a rule does not
+        revoke approvals that the rule has already applied.
 #>
-Configuration UpdateServicesComputerTargetGroup_DeleteComputerTargetGroup_Config
+Configuration UpdateServicesApprovalRule_RemoveApprovalRule_Config
 {
     param ()
 
@@ -30,11 +33,10 @@ Configuration UpdateServicesComputerTargetGroup_DeleteComputerTargetGroup_Config
 
     node localhost
     {
-        UpdateServicesComputerTargetGroup 'ComputerTargetGroup_Web'
+        UpdateServicesApprovalRule 'SecurityUpdates'
         {
-            Name        = 'Web'
-            Path        = 'All Computers/Servers'
-            Ensure      = 'Absent'
+            Ensure = 'Absent'
+            Name   = 'Critical and Security Updates'
         }
     }
 }

@@ -1,6 +1,6 @@
 <#PSScriptInfo
 .VERSION 1.0.0
-.GUID 9165945f-cd15-4865-aa3a-1ac6b6f94a8b
+.GUID ea62021c-332c-4349-8e8f-0c1f61700a3a
 .AUTHOR DSC Community
 .COMPANYNAME DSC Community
 .COPYRIGHT DSC Community contributors. All rights reserved.
@@ -9,20 +9,20 @@
 .PROJECTURI https://github.com/dsccommunity/UpdateServicesDsc
 .ICONURI https://dsccommunity.org/images/DSC_Logo_300p.png
 .RELEASENOTES
-Updated author, copyright notice, and URLs.
+First version.
 #>
 
 #Requires -Module UpdateServicesDsc
 
 <#
     .SYNOPSIS
-        Delete a WSUS Computer Target Group.
+        Remove the scheduled WSUS cleanup.
 
     .DESCRIPTION
-        This configuration will delete a WSUS Computer Target Group named 'Web'
-        from the 'All Computers/Servers' path using the UpdateServicesDsc module.
+        This configuration unregisters the 'WSUS Cleanup' scheduled task, so that
+        no cleanup runs on a schedule.
 #>
-Configuration UpdateServicesComputerTargetGroup_DeleteComputerTargetGroup_Config
+Configuration UpdateServicesCleanup_RemoveCleanupTask_Config
 {
     param ()
 
@@ -30,11 +30,9 @@ Configuration UpdateServicesComputerTargetGroup_DeleteComputerTargetGroup_Config
 
     node localhost
     {
-        UpdateServicesComputerTargetGroup 'ComputerTargetGroup_Web'
+        UpdateServicesCleanup 'WsusCleanup'
         {
-            Name        = 'Web'
-            Path        = 'All Computers/Servers'
-            Ensure      = 'Absent'
+            Ensure = 'Absent'
         }
     }
 }
