@@ -35,11 +35,13 @@ BeforeAll {
 
     Import-Module -Name $script:subModulePath -Force -ErrorAction 'Stop'
 
+    $PSDefaultParameterValues['InModuleScope:ModuleName'] = $script:subModuleName
     $PSDefaultParameterValues['Mock:ModuleName'] = $script:subModuleName
     $PSDefaultParameterValues['Should:ModuleName'] = $script:subModuleName
 }
 
 AfterAll {
+    $PSDefaultParameterValues.Remove('InModuleScope:ModuleName')
     $PSDefaultParameterValues.Remove('Mock:ModuleName')
     $PSDefaultParameterValues.Remove('Should:ModuleName')
 
@@ -60,7 +62,7 @@ Describe 'PDT\Start-Win32Process' {
         }
 
         It 'Should return that the process was already started, without starting it again' {
-            InModuleScope -ModuleName 'PDT' -ScriptBlock {
+            InModuleScope -ScriptBlock {
                 Set-StrictMode -Version 1.0
 
                 Start-Win32Process -Path 'C:\Windows\System32\cmd.exe' |
@@ -94,7 +96,7 @@ Describe 'PDT\Start-Win32Process' {
         }
 
         It 'Should return that the process was started' {
-            InModuleScope -ModuleName 'PDT' -ScriptBlock {
+            InModuleScope -ScriptBlock {
                 Set-StrictMode -Version 1.0
 
                 Start-Win32Process -Path 'C:\Windows\System32\cmd.exe' |
@@ -114,7 +116,7 @@ Describe 'PDT\Start-Win32Process' {
         }
 
         It 'Should throw the correct error' {
-            InModuleScope -ModuleName 'PDT' -ScriptBlock {
+            InModuleScope -ScriptBlock {
                 Set-StrictMode -Version 1.0
 
                 $errorMessage = $script:localizedData.ProcessFailedToStartError -f @('C:\Windows\System32\cmd.exe', 'test')
@@ -135,7 +137,7 @@ Describe 'PDT\Start-Win32Process' {
         }
 
         It 'Should throw the returned error' {
-            InModuleScope -ModuleName 'PDT' -ScriptBlock {
+            InModuleScope -ScriptBlock {
                 Set-StrictMode -Version 1.0
 
                 { Start-Win32Process -Path 'C:\Windows\System32\cmd.exe' } | Should -Throw -ExpectedMessage '*Some error*'
