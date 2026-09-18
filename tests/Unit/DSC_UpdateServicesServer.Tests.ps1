@@ -714,6 +714,75 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                 }
             }
         }
+
+        Context 'When the ProxyServerCredential property is used' {
+            Context 'When ProxyServerName is not specified but is configured on the server' {
+                BeforeAll {
+                    Mock -CommandName Get-TargetResource -MockWith {
+                        @{
+                            Ensure                        = 'Present'
+                            ProxyServerName               = 'ProxyServer'
+                            ProxyServerCredentialUserName = ''
+                        }
+                    }
+                }
+
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure                = 'Present'
+                            ProxyServerCredential = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+                        }
+
+                        Test-TargetResource @testParams | Should -BeFalse
+                    }
+                }
+            }
+        }
+
+        Context 'When the status notification schedule is used without recipients' {
+            BeforeAll {
+                Mock -CommandName Get-TargetResource -MockWith {
+                    @{
+                        Ensure                      = 'Present'
+                        StatusNotificationFrequency = 'Daily'
+                        StatusNotificationTimeOfDay = '07:00:00'
+                    }
+                }
+            }
+
+            Context 'When the frequency does not match' {
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure                      = 'Present'
+                            StatusNotificationFrequency = 'Weekly'
+                        }
+
+                        Test-TargetResource @testParams | Should -BeFalse
+                    }
+                }
+            }
+
+            Context 'When the time of day does not match' {
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure                      = 'Present'
+                            StatusNotificationTimeOfDay = '09:00:00'
+                        }
+
+                        Test-TargetResource @testParams | Should -BeFalse
+                    }
+                }
+            }
+        }
     }
 
     Context 'When the resource is not in the desired state' {
@@ -1111,6 +1180,86 @@ Describe 'DSC_UpdateServicesServer\Set-TargetResource' -Tag 'Set' {
                 $null = Set-TargetResource @testParams
 
                 $script:mockReplicaConfiguration.ContainsKey('MURollupOptin') | Should -BeFalse
+            }
+        }
+    }
+
+    Context 'When ProxyServerName is not specified but a proxy server is configured on the server' {
+        It 'Should apply ProxyServerCredential' {
+            InModuleScope -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
+                $script:mockProxyConfiguration = $null
+
+                Mock -CommandName Get-WsusServer -MockWith {
+                    $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
+
+                    $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetConfiguration -Value {
+                        if (-not $script:mockProxyConfiguration)
+                        {
+                            # A proxy server is already configured on the server
+                            $script:mockProxyConfiguration = @{
+                                OobeInitialized           = $true
+                                UseProxy                  = $true
+                                AnonymousProxyAccess      = $true
+                                AllUpdateLanguagesEnabled = $true
+                            }
+                            $script:mockProxyConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
+                            $script:mockProxyConfiguration | Add-Member -MemberType ScriptMethod -Name SetProxyPassword -Value {}
+                        }
+
+                        return $script:mockProxyConfiguration
+                    }
+
+                    return $mockWsusServer
+                }
+
+                $testParams = @{
+                    Ensure                = 'Present'
+                    ProxyServerCredential = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+                }
+
+                $null = Set-TargetResource @testParams
+
+                $script:mockProxyConfiguration.AnonymousProxyAccess | Should -BeFalse
+                $script:mockProxyConfiguration.ProxyUserName | Should -Be 'foo'
+            }
+        }
+    }
+
+    Context 'When the status notification schedule is specified without recipients' {
+        It 'Should apply the schedule' {
+            InModuleScope -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
+                $script:mockScheduleConfiguration = $null
+
+                Mock -CommandName Get-WsusServer -MockWith {
+                    $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
+
+                    $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetEmailNotificationConfiguration -Value {
+                        if (-not $script:mockScheduleConfiguration)
+                        {
+                            $script:mockScheduleConfiguration = @{
+                                SendStatusNotification = $true
+                            }
+                            $script:mockScheduleConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
+                        }
+
+                        return $script:mockScheduleConfiguration
+                    }
+
+                    return $mockWsusServer
+                }
+
+                $testParams = @{
+                    Ensure                      = 'Present'
+                    StatusNotificationFrequency = 'Weekly'
+                }
+
+                $null = Set-TargetResource @testParams
+
+                $script:mockScheduleConfiguration.StatusNotificationFrequency | Should -Be 'Weekly'
             }
         }
     }
