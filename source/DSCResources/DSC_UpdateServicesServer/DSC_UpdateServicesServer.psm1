@@ -92,17 +92,6 @@ function Get-TargetResource
             $SQLServer = ''
         }
 
-        if (-not $WsusConfiguration.IsReplicaServer)
-        {
-            Write-Verbose -Message $script:localizedData.GetWsusImproveProgram
-            $UpdateImprovementProgram = $WsusConfiguration.MURollupOptin
-            Write-Verbose -Message ($script:localizedData.ImprovementProgram -f $UpdateImprovementProgram)
-        }
-        else
-        {
-            $UpdateImprovementProgram = $null
-        }
-
         if (-not $WsusConfiguration.SyncFromMicrosoftUpdate)
         {
             Write-Verbose -Message $script:localizedData.GetUpstreamServer
@@ -129,6 +118,17 @@ function Get-TargetResource
             $UpstreamServerReplica = $false
         }
         Write-Verbose -Message ($script:localizedData.ReplicaServer -f $UpstreamServerReplica)
+
+        if (-not $WsusConfiguration.IsReplicaServer)
+        {
+            Write-Verbose -Message $script:localizedData.GetWsusImproveProgram
+            $UpdateImprovementProgram = $WsusConfiguration.MURollupOptin
+            Write-Verbose -Message ($script:localizedData.ImprovementProgram -f $UpdateImprovementProgram)
+        }
+        else
+        {
+            $UpdateImprovementProgram = $null
+        }
 
         if ($WsusConfiguration.UseProxy)
         {
@@ -840,17 +840,6 @@ function Set-TargetResource
         Write-Verbose -Message $script:localizedData.CheckPreviousConfig
         Save-WsusConfiguration
 
-        # If this is not a replica server
-        if (-not $UpstreamServerReplica)
-        {
-            # Configure Update Improvement Program
-            if ($PSBoundParameters.ContainsKey('UpdateImprovementProgram'))
-            {
-                Write-Verbose -Message $script:localizedData.ConfiguringUpdateImprove
-                $WsusConfiguration.MURollupOptin = $UpdateImprovementProgram
-            }
-        }
-
         # Configure Upstream Server
         if ($PSBoundParameters.ContainsKey('UpstreamServerName'))
         {
@@ -872,7 +861,7 @@ function Set-TargetResource
         # Configure Upstream Server Replica separately as IsReplicaServer=$true prevents other settings even when SyncFromMicrosoftUpdate=$true
         if ($PSBoundParameters.ContainsKey('UpstreamServerReplica'))
         {
-            if ($UpstreamServerName)
+            if (-not $WsusConfiguration.SyncFromMicrosoftUpdate)
             {
                 Write-Verbose -Message $script:localizedData.ConfiguringUpstreamServerReplica
                 $WsusConfiguration.IsReplicaServer = $UpstreamServerReplica
@@ -884,6 +873,17 @@ function Set-TargetResource
                     Write-Verbose -Message $script:localizedData.ConfiguringNoUpstreamServerReplica
                     $WsusConfiguration.IsReplicaServer = $UpstreamServerReplica
                 }
+            }
+        }
+
+        # If this is not a replica server
+        if (-not $WsusConfiguration.IsReplicaServer)
+        {
+            # Configure Update Improvement Program
+            if ($PSBoundParameters.ContainsKey('UpdateImprovementProgram'))
+            {
+                Write-Verbose -Message $script:localizedData.ConfiguringUpdateImprove
+                $WsusConfiguration.MURollupOptin = $UpdateImprovementProgram
             }
         }
 
@@ -943,7 +943,7 @@ function Set-TargetResource
                     $WsusConfiguration.DownloadExpressPackages = $DownloadExpressPackages
                 }
                 # If we have an upstream server configured - otherwise no point configuring this
-                if ($UpstreamServerName)
+                if (-not $WsusConfiguration.SyncFromMicrosoftUpdate)
                 {
                     if ($PSBoundParameters.ContainsKey('GetContentFromMU'))
                     {
@@ -975,7 +975,7 @@ function Set-TargetResource
         }
 
         # If this is not a replica server
-        if (-not $UpstreamServerReplica)
+        if (-not $WsusConfiguration.IsReplicaServer)
         {
             # Configure Advanced Automatic Approvals
             if ($PSBoundParameters.ContainsKey('AutoApproveWsusInfrastructureUpdates'))
@@ -1109,7 +1109,7 @@ function Set-TargetResource
             }
         }
 
-        if ($SmtpHostName)
+        if ($WsusEmailNotificationConfiguration.SmtpHostName)
         {
             if ($PSBoundParameters.ContainsKey('EmailServerCredential'))
             {
@@ -1170,7 +1170,7 @@ function Set-TargetResource
         Save-WsusConfiguration
 
         # If this is not a replica server
-        if (-not $UpstreamServerReplica)
+        if (-not $WsusConfiguration.IsReplicaServer)
         {
             # Configure Reporting rollup
             if ($PSBoundParameters.ContainsKey('DoDetailedRollup'))
@@ -1187,7 +1187,7 @@ function Set-TargetResource
         if (-not $WsusConfiguration.OobeInitialized)
         {
             # If this is not a replica server
-            if (-not $UpstreamServerReplica)
+            if (-not $WsusConfiguration.IsReplicaServer)
             {
                 if ($PSBoundParameters.ContainsKey('Products'))
                 {
@@ -1281,7 +1281,7 @@ function Set-TargetResource
             $wsusSubscription = $WsusServer.GetSubscription()
 
             # If this is not a replica server
-            if (-not $UpstreamServerReplica)
+            if (-not $WsusConfiguration.IsReplicaServer)
             {
                 # Products
                 if ($PSBoundParameters.ContainsKey('Products'))
@@ -1785,20 +1785,6 @@ function Test-TargetResource
 
     if ($Ensure -eq 'Present')
     {
-        # If this is not a replica server
-        if (-not $UpstreamServerReplica)
-        {
-            # Test Update Improvement Program
-            if ($PSBoundParameters.ContainsKey('UpdateImprovementProgram'))
-            {
-                if ($Wsus.UpdateImprovementProgram -ne $UpdateImprovementProgram)
-                {
-                    Write-Verbose -Message $script:localizedData.ImproveProgramTestFailed
-                    $testTargetResourceReturnValue = $false
-                }
-            }
-        }
-
         # Test Upstream Server
         if ($PSBoundParameters.ContainsKey('UpstreamServerName'))
         {
@@ -1826,7 +1812,7 @@ function Test-TargetResource
         # Test Upstream Server Replica separately as IsReplicaServer=$true prevents other settings even when SyncFromMicrosoftUpdate=$true
         if ($PSBoundParameters.ContainsKey('UpstreamServerReplica'))
         {
-            if ($UpstreamServerName)
+            if ($Wsus.UpstreamServerName)
             {
                 if ($Wsus.UpstreamServerReplica -ne $UpstreamServerReplica)
                 {
@@ -1843,6 +1829,20 @@ function Test-TargetResource
                 }
             }
 
+        }
+
+        # If this is not a replica server
+        if (-not $Wsus.UpstreamServerReplica)
+        {
+            # Test Update Improvement Program
+            if ($PSBoundParameters.ContainsKey('UpdateImprovementProgram'))
+            {
+                if ($Wsus.UpdateImprovementProgram -ne $UpdateImprovementProgram)
+                {
+                    Write-Verbose -Message $script:localizedData.ImproveProgramTestFailed
+                    $testTargetResourceReturnValue = $false
+                }
+            }
         }
 
         # Test Proxy Server
@@ -1937,7 +1937,7 @@ function Test-TargetResource
                     }
                 }
                 # If we have an upstream server configured - otherwise no point configuring this
-                if ($UpstreamServerName)
+                if ($Wsus.UpstreamServerName)
                 {
                     if ($PSBoundParameters.ContainsKey('GetContentFromMU'))
                     {
@@ -1974,7 +1974,7 @@ function Test-TargetResource
         }
 
         # If this is not a replica server
-        if (-not $UpstreamServerReplica)
+        if (-not $Wsus.UpstreamServerReplica)
         {
             # Test Products
             if ($PSBoundParameters.ContainsKey('Products'))
@@ -2095,7 +2095,7 @@ function Test-TargetResource
         }
 
         # If this is not a replica server
-        if (-not $UpstreamServerReplica)
+        if (-not $Wsus.UpstreamServerReplica)
         {
             # Test Advanced Automatic Approvals
             if ($PSBoundParameters.ContainsKey('AutoApproveWsusInfrastructureUpdates'))
@@ -2138,7 +2138,7 @@ function Test-TargetResource
         }
 
         # If this is not a replica server
-        if (-not $UpstreamServerReplica)
+        if (-not $Wsus.UpstreamServerReplica)
         {
             # Test Reporting rollup
             if ($PSBoundParameters.ContainsKey('DoDetailedRollup'))
@@ -2231,7 +2231,7 @@ function Test-TargetResource
                 $testTargetResourceReturnValue = $false
             }
         }
-        if ($SmtpHostName)
+        if ($Wsus.SmtpHostName)
         {
             if ($PSBoundParameters.ContainsKey('EmailServerCredential'))
             {

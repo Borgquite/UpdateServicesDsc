@@ -632,6 +632,87 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                     }
                 }
             }
+
+            Context 'When UpstreamServerName is not specified but is configured on the server' {
+                BeforeAll {
+                    Mock -CommandName Get-TargetResource -MockWith {
+                        @{
+                            Ensure             = 'Present'
+                            ContentDir         = 'C:\WSUSContent\'
+                            UpstreamServerName = 'UpstreamServer'
+                            GetContentFromMU   = $false
+                        }
+                    }
+                }
+
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure           = 'Present'
+                            ContentDir       = 'C:\WSUSContent\'
+                            GetContentFromMU = $true
+                        }
+
+                        Test-TargetResource @testParams | Should -BeFalse
+                    }
+                }
+            }
+        }
+
+        Context 'When the UpstreamServerReplica property is used' {
+            Context 'When UpstreamServerName is not specified but is configured on the server' {
+                BeforeAll {
+                    Mock -CommandName Get-TargetResource -MockWith {
+                        @{
+                            Ensure                = 'Present'
+                            UpstreamServerName    = 'UpstreamServer'
+                            UpstreamServerReplica = $false
+                        }
+                    }
+                }
+
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure                = 'Present'
+                            UpstreamServerReplica = $true
+                        }
+
+                        Test-TargetResource @testParams | Should -BeFalse
+                    }
+                }
+            }
+        }
+
+        Context 'When the EmailServerCredential property is used' {
+            Context 'When SmtpHostName is not specified but is configured on the server' {
+                BeforeAll {
+                    Mock -CommandName Get-TargetResource -MockWith {
+                        @{
+                            Ensure       = 'Present'
+                            SmtpHostName = 'smtp.contoso.com'
+                            SmtpUserName = ''
+                        }
+                    }
+                }
+
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure                = 'Present'
+                            EmailServerCredential = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+                        }
+
+                        Test-TargetResource @testParams | Should -BeFalse
+                    }
+                }
+            }
         }
     }
 
@@ -910,6 +991,127 @@ Describe 'DSC_UpdateServicesServer\Set-TargetResource' -Tag 'Set' {
             Should -Invoke -CommandName Start-Win32Process -ParameterFilter {
                 -not [String]::IsNullOrEmpty($Path)
             } -Exactly -Times 1 -Scope It
+        }
+    }
+
+    Context 'When a dependent setting is specified but the setting it depends on is not' {
+        It 'Should apply GetContentFromMU using the upstream server already configured on the server' {
+            InModuleScope -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
+                $script:mockConfiguration = $null
+
+                Mock -CommandName Get-WsusServer -MockWith {
+                    $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
+
+                    $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetConfiguration -Value {
+                        if (-not $script:mockConfiguration)
+                        {
+                            # An upstream server is already configured on the server
+                            $script:mockConfiguration = @{
+                                OobeInitialized           = $true
+                                SyncFromMicrosoftUpdate   = $false
+                                IsReplicaServer           = $false
+                                AllUpdateLanguagesEnabled = $true
+                            }
+                            $script:mockConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
+                        }
+
+                        return $script:mockConfiguration
+                    }
+
+                    return $mockWsusServer
+                }
+
+                $testParams = @{
+                    Ensure           = 'Present'
+                    ContentDir       = 'C:\WSUSContent\'
+                    GetContentFromMU = $true
+                }
+
+                $null = Set-TargetResource @testParams
+
+                $script:mockConfiguration.GetContentFromMU | Should -BeTrue
+            }
+        }
+
+        It 'Should apply EmailServerCredential using the SMTP host already configured on the server' {
+            InModuleScope -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
+                $script:mockEmailConfiguration = $null
+
+                Mock -CommandName Get-WsusServer -MockWith {
+                    $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
+
+                    $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetEmailNotificationConfiguration -Value {
+                        if (-not $script:mockEmailConfiguration)
+                        {
+                            # An SMTP host is already configured on the server
+                            $script:mockEmailConfiguration = @{
+                                SmtpHostName                     = 'smtp.contoso.com'
+                                SmtpServerRequiresAuthentication = $false
+                            }
+                            $script:mockEmailConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
+                            $script:mockEmailConfiguration | Add-Member -MemberType ScriptMethod -Name SetSmtpUserPassword -Value {}
+                        }
+
+                        return $script:mockEmailConfiguration
+                    }
+
+                    return $mockWsusServer
+                }
+
+                $testParams = @{
+                    Ensure                = 'Present'
+                    EmailServerCredential = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+                }
+
+                $null = Set-TargetResource @testParams
+
+                $script:mockEmailConfiguration.SmtpServerRequiresAuthentication | Should -BeTrue
+                $script:mockEmailConfiguration.SmtpUserName | Should -Be 'foo'
+            }
+        }
+    }
+
+    Context 'When the server is already a replica and UpstreamServerReplica is not specified' {
+        It 'Should not apply UpdateImprovementProgram' {
+            InModuleScope -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
+                $script:mockReplicaConfiguration = $null
+
+                Mock -CommandName Get-WsusServer -MockWith {
+                    $mockWsusServer = CommonTestHelper\Get-WsusServerTemplate
+
+                    $mockWsusServer | Add-Member -Force -MemberType ScriptMethod -Name GetConfiguration -Value {
+                        if (-not $script:mockReplicaConfiguration)
+                        {
+                            $script:mockReplicaConfiguration = @{
+                                OobeInitialized           = $true
+                                SyncFromMicrosoftUpdate   = $false
+                                IsReplicaServer           = $true
+                                AllUpdateLanguagesEnabled = $true
+                            }
+                            $script:mockReplicaConfiguration | Add-Member -MemberType ScriptMethod -Name Save -Value {}
+                        }
+
+                        return $script:mockReplicaConfiguration
+                    }
+
+                    return $mockWsusServer
+                }
+
+                $testParams = @{
+                    Ensure                   = 'Present'
+                    UpdateImprovementProgram = $true
+                }
+
+                $null = Set-TargetResource @testParams
+
+                $script:mockReplicaConfiguration.ContainsKey('MURollupOptin') | Should -BeFalse
+            }
         }
     }
 }
