@@ -536,10 +536,8 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                 Should -Invoke -CommandName Get-TargetResource -Exactly -Times 1 -Scope It
             }
 
-            It 'Should return the correct result when the server hosts the content locally' {
-                InModuleScope -ScriptBlock {
-                    Set-StrictMode -Version 1.0
-
+            Context 'When the server hosts the content locally' {
+                BeforeAll {
                     Mock -CommandName Get-TargetResource -MockWith {
                         @{
                             Ensure             = 'Present'
@@ -547,8 +545,14 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                             UpstreamServerName = ''
                         }
                     }
+                }
 
-                    Test-TargetResource -Ensure 'Present' -ContentDir '' | Should -BeFalse
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        Test-TargetResource -Ensure 'Present' -ContentDir '' | Should -BeFalse
+                    }
                 }
             }
         }
@@ -567,40 +571,42 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                 }
             }
 
-            It 'Should return the correct result when the setting matches' {
-                InModuleScope -ScriptBlock {
-                    Set-StrictMode -Version 1.0
+            Context 'When the setting matches' {
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
 
-                    $testParams = @{
-                        Ensure             = 'Present'
-                        ContentDir         = 'C:\WSUSContent\'
-                        UpstreamServerName = 'UpstreamServer'
-                        GetContentFromMU   = $false
+                        $testParams = @{
+                            Ensure             = 'Present'
+                            ContentDir         = 'C:\WSUSContent\'
+                            UpstreamServerName = 'UpstreamServer'
+                            GetContentFromMU   = $false
+                        }
+
+                        Test-TargetResource @testParams | Should -BeTrue
                     }
-
-                    Test-TargetResource @testParams | Should -BeTrue
                 }
             }
 
-            It 'Should return the correct result when the setting does not match' {
-                InModuleScope -ScriptBlock {
-                    Set-StrictMode -Version 1.0
+            Context 'When the setting does not match' {
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
 
-                    $testParams = @{
-                        Ensure             = 'Present'
-                        ContentDir         = 'C:\WSUSContent\'
-                        UpstreamServerName = 'UpstreamServer'
-                        GetContentFromMU   = $true
+                        $testParams = @{
+                            Ensure             = 'Present'
+                            ContentDir         = 'C:\WSUSContent\'
+                            UpstreamServerName = 'UpstreamServer'
+                            GetContentFromMU   = $true
+                        }
+
+                        Test-TargetResource @testParams | Should -BeFalse
                     }
-
-                    Test-TargetResource @testParams | Should -BeFalse
                 }
             }
 
-            It 'Should ignore the setting when no upstream server is configured' {
-                InModuleScope -ScriptBlock {
-                    Set-StrictMode -Version 1.0
-
+            Context 'When no upstream server is configured' {
+                BeforeAll {
                     Mock -CommandName Get-TargetResource -MockWith {
                         @{
                             Ensure             = 'Present'
@@ -609,15 +615,21 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                             GetContentFromMU   = $null
                         }
                     }
+                }
 
-                    $testParams = @{
-                        Ensure             = 'Present'
-                        ContentDir         = 'C:\WSUSContent\'
-                        UpstreamServerName = ''
-                        GetContentFromMU   = $true
+                It 'Should ignore the setting' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure             = 'Present'
+                            ContentDir         = 'C:\WSUSContent\'
+                            UpstreamServerName = ''
+                            GetContentFromMU   = $true
+                        }
+
+                        Test-TargetResource @testParams | Should -BeTrue
                     }
-
-                    Test-TargetResource @testParams | Should -BeTrue
                 }
             }
         }
@@ -781,9 +793,9 @@ Describe 'DSC_UpdateServicesServer\Set-TargetResource' -Tag 'Set' {
         Mock -CommandName Test-WsusConfigured -MockWith { $true }
 
         Mock -CommandName New-Object -MockWith {
-            $obj = [PSCustomObject] @{}
-            $obj | Add-Member -Force -MemberType ScriptMethod -Name Add -Value { return }
-            return $obj
+            $mockObject = [PSCustomObject] @{}
+            $mockObject | Add-Member -Force -MemberType ScriptMethod -Name Add -Value { return }
+            return $mockObject
         }
     }
 
@@ -891,7 +903,7 @@ Describe 'DSC_UpdateServicesServer\Set-TargetResource' -Tag 'Set' {
                     Ensure = 'Present'
                 }
 
-                { $null = Set-TargetResource @testParams } | Should -Not -Throw
+                $null = Set-TargetResource @testParams
             }
 
             Should -Invoke -CommandName Invoke-ResolvePath -Exactly -Times 1 -Scope It

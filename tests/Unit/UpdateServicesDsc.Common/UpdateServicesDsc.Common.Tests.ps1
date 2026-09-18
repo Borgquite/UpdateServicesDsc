@@ -1,5 +1,5 @@
 # Suppressing this rule because Script Analyzer does not understand Pester's syntax.
-[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '', Justification = 'Suppressing this rule because Script Analyzer does not understand Pester syntax.')]
 param ()
 
 BeforeDiscovery {
@@ -84,9 +84,9 @@ Describe 'UpdateServicesDsc.Common\Test-WsusConfigured' {
         }
 
         It 'Should return $false rather than throw' {
-            { $script:result = Test-WsusConfigured } | Should -Not -Throw
+            $result = Test-WsusConfigured
 
-            $script:result | Should -BeFalse
+            $result | Should -BeFalse
         }
     }
 }

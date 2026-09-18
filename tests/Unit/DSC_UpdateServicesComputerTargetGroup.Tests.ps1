@@ -524,7 +524,7 @@ Describe 'DSC_UpdateServicesComputerTargetGroup\Set-TargetResource' -Tag 'Set' {
                     Path = 'All Computers/Servers (UK)'
                 }
 
-                { Set-TargetResource @testParams } | Should -Not -Throw
+                $null = Set-TargetResource @testParams
             }
 
             Should -Invoke -CommandName Get-WsusServer -Times 1 -Exactly -Scope It

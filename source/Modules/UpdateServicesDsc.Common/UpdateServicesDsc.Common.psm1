@@ -31,8 +31,13 @@ function Test-WsusConfigured
 
     try
     {
-        $wsusConfigured = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Update Services\Server\Setup\Installed Role Services' `
-                -Name 'UpdateServices-Services' -ErrorAction Stop).'UpdateServices-Services' -eq '2'
+        $getItemPropertyParameters = @{
+            Path        = 'HKLM:\SOFTWARE\Microsoft\Update Services\Server\Setup\Installed Role Services'
+            Name        = 'UpdateServices-Services'
+            ErrorAction = 'Stop'
+        }
+
+        $wsusConfigured = (Get-ItemProperty @getItemPropertyParameters).'UpdateServices-Services' -eq '2'
     }
     catch
     {
