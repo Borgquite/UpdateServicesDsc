@@ -24,6 +24,11 @@ First version.
 
         TimeOfDay is the local time the task starts, and defaults to 04:00:00
         when it is not specified.
+
+    .EXAMPLE
+        UpdateServicesCleanup_ScheduleDailyCleanup_Config
+
+        Compiles a configuration that schedules the daily WSUS cleanup.
 #>
 Configuration UpdateServicesCleanup_ScheduleDailyCleanup_Config
 {

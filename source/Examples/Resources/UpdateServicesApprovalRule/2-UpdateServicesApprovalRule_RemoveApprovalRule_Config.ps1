@@ -24,6 +24,11 @@ First version.
 
         Only the rule name is needed to remove a rule. Removing a rule does not
         revoke approvals that the rule has already applied.
+
+    .EXAMPLE
+        UpdateServicesApprovalRule_RemoveApprovalRule_Config
+
+        Compiles a configuration that removes the approval rule.
 #>
 Configuration UpdateServicesApprovalRule_RemoveApprovalRule_Config
 {

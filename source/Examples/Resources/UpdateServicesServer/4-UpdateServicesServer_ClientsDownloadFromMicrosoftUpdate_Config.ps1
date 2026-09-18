@@ -31,6 +31,12 @@ First version.
 
     .PARAMETER SetupCredential
         Credential used to perform the initial WSUS post-installation configuration.
+
+    .EXAMPLE
+        UpdateServicesServer_ClientsDownloadFromMicrosoftUpdate_Config -SetupCredential (Get-Credential)
+
+        Compiles a configuration that sets up a WSUS server whose clients
+        download update files from Microsoft Update.
 #>
 Configuration UpdateServicesServer_ClientsDownloadFromMicrosoftUpdate_Config
 {
@@ -54,6 +60,8 @@ Configuration UpdateServicesServer_ClientsDownloadFromMicrosoftUpdate_Config
             ContentDir                               = ''
 
             UpstreamServerName                       = ''
+            UpstreamServerReplica                    = $false
+
             ProxyServerName                          = ''
 
             Languages                                = @('*')

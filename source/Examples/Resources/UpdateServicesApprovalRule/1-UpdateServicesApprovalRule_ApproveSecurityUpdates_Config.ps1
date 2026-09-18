@@ -26,6 +26,11 @@ First version.
 
         Classifications are given as GUIDs. The full list is documented at the
         top of the UpdateServicesApprovalRule resource.
+
+    .EXAMPLE
+        UpdateServicesApprovalRule_ApproveSecurityUpdates_Config
+
+        Compiles a configuration that creates the approval rules.
 #>
 Configuration UpdateServicesApprovalRule_ApproveSecurityUpdates_Config
 {

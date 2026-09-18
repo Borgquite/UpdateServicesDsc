@@ -30,6 +30,11 @@ First version.
 
     .PARAMETER EmailServerCredential
         Credential used to authenticate to the SMTP server.
+
+    .EXAMPLE
+        UpdateServicesServer_EmailNotifications_Config -EmailServerCredential (Get-Credential)
+
+        Compiles a configuration that sets up WSUS e-mail notifications.
 #>
 Configuration UpdateServicesServer_EmailNotifications_Config
 {

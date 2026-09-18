@@ -29,6 +29,12 @@ First version.
 
     .PARAMETER SetupCredential
         Credential used to perform the initial WSUS post-installation configuration.
+
+    .EXAMPLE
+        UpdateServicesServer_SyncFromMicrosoftUpdate_Config -SetupCredential (Get-Credential)
+
+        Compiles a configuration that sets up a standalone WSUS server which
+        synchronizes from Microsoft Update.
 #>
 Configuration UpdateServicesServer_SyncFromMicrosoftUpdate_Config
 {
@@ -53,8 +59,8 @@ Configuration UpdateServicesServer_SyncFromMicrosoftUpdate_Config
             DownloadUpdateBinariesAsNeeded    = $true
             DownloadExpressPackages           = $false
 
-            # An empty upstream server name means synchronize from Microsoft Update.
             UpstreamServerName                = ''
+            UpstreamServerReplica             = $false
 
             # No proxy server is used for synchronization.
             ProxyServerName                   = ''

@@ -32,6 +32,12 @@ First version.
 
     .PARAMETER ProxyServerCredential
         Credential used to authenticate to the proxy server.
+
+    .EXAMPLE
+        UpdateServicesServer_DownstreamReplicaServer_Config -SetupCredential (Get-Credential) -ProxyServerCredential (Get-Credential)
+
+        Compiles a configuration that sets up a WSUS replica server which
+        synchronizes through an authenticating proxy.
 #>
 Configuration UpdateServicesServer_DownstreamReplicaServer_Config
 {

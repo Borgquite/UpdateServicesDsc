@@ -21,6 +21,11 @@ First version.
     .DESCRIPTION
         This configuration unregisters the 'WSUS Cleanup' scheduled task, so that
         no cleanup runs on a schedule.
+
+    .EXAMPLE
+        UpdateServicesCleanup_RemoveCleanupTask_Config
+
+        Compiles a configuration that removes the scheduled WSUS cleanup.
 #>
 Configuration UpdateServicesCleanup_RemoveCleanupTask_Config
 {
