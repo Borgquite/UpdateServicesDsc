@@ -861,6 +861,15 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                 'ProxyServerPort'
                 'SynchronizeAutomaticallyTimeOfDay'
                 'SynchronizationsPerDay'
+                'DownloadUpdateBinariesAsNeeded'
+                'DownloadExpressPackages'
+                'SmtpHostName'
+                'SmtpPort'
+                'SenderDisplayName'
+                'SenderEmailAddress'
+                'EmailLanguage'
+                'SyncNotificationRecipients'
+                'StatusNotificationRecipients'
             )
         }
 
@@ -868,7 +877,7 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
             BeforeAll {
                 Mock -CommandName Get-TargetResource -MockWith {
                     $data = @{
-                        Ensure                            = 'Absent'
+                        Ensure                            = 'Present'
                         SetupCredential                   = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
                         SQLServer                         = 'SQLServer'
                         ContentDir                        = 'C:\WSUSContent\'
@@ -886,6 +895,15 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                         SynchronizeAutomaticallyTimeOfDay = '04:00:00'
                         SynchronizationsPerDay            = 24
                         ClientTargetingMode               = 'Client'
+                        DownloadUpdateBinariesAsNeeded    = $true
+                        DownloadExpressPackages           = $true
+                        SmtpHostName                      = 'smtp.contoso.com'
+                        SmtpPort                          = 25
+                        SenderDisplayName                 = 'WSUS Server'
+                        SenderEmailAddress                = 'wsus@contoso.com'
+                        EmailLanguage                     = 'en'
+                        SyncNotificationRecipients        = @('sync@contoso.com')
+                        StatusNotificationRecipients      = @('status@contoso.com')
                     }
                     $data.Remove($_)
 
@@ -920,12 +938,21 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                         SynchronizeAutomaticallyTimeOfDay = '04:00:00'
                         SynchronizationsPerDay            = 24
                         ClientTargetingMode               = 'Client'
+                        DownloadUpdateBinariesAsNeeded    = $true
+                        DownloadExpressPackages           = $true
+                        SmtpHostName                      = 'smtp.contoso.com'
+                        SmtpPort                          = 25
+                        SenderDisplayName                 = 'WSUS Server'
+                        SenderEmailAddress                = 'wsus@contoso.com'
+                        EmailLanguage                     = 'en'
+                        SyncNotificationRecipients        = @('sync@contoso.com')
+                        StatusNotificationRecipients      = @('status@contoso.com')
                     }
 
                     Test-TargetResource @testParams | Should -BeFalse
 
                     Should -Invoke -CommandName Get-TargetResource -Exactly -Times 1 -Scope It
-                    Should -Invoke -CommandName Get-WsusServer -Exactly -Times 0 -Scope It
+                    Should -Invoke -CommandName Get-WsusServer -Exactly -Times 1 -Scope It
                 }
             }
         }
