@@ -61,6 +61,8 @@ Describe 'PDT\Start-Win32Process' {
 
         It 'Should return that the process was already started, without starting it again' {
             InModuleScope -ModuleName 'PDT' -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
                 Start-Win32Process -Path 'C:\Windows\System32\cmd.exe' |
                     Should -Be ($script:localizedData.ProcessAlreadyStarted -f 'C:\Windows\System32\cmd.exe', 1234)
             }
@@ -93,6 +95,8 @@ Describe 'PDT\Start-Win32Process' {
 
         It 'Should return that the process was started' {
             InModuleScope -ModuleName 'PDT' -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
                 Start-Win32Process -Path 'C:\Windows\System32\cmd.exe' |
                     Should -Be ($script:localizedData.ProcessStarted -f 'C:\Windows\System32\cmd.exe', 1234)
             }
@@ -111,6 +115,8 @@ Describe 'PDT\Start-Win32Process' {
 
         It 'Should throw the correct error' {
             InModuleScope -ModuleName 'PDT' -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
                 $errorMessage = $script:localizedData.ProcessFailedToStartError -f @('C:\Windows\System32\cmd.exe', 'test')
 
                 { Start-Win32Process -Path 'C:\Windows\System32\cmd.exe' -Arguments 'test' } |
@@ -130,6 +136,8 @@ Describe 'PDT\Start-Win32Process' {
 
         It 'Should throw the returned error' {
             InModuleScope -ModuleName 'PDT' -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
                 { Start-Win32Process -Path 'C:\Windows\System32\cmd.exe' } | Should -Throw -ExpectedMessage '*Some error*'
             }
 
