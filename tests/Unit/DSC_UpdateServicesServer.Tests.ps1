@@ -783,6 +783,97 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                 }
             }
         }
+
+        Context 'When list properties are compared' {
+            BeforeAll {
+                Mock -CommandName Get-WsusServer -MockWith {
+                    return CommonTestHelper\Get-WsusServerTemplate
+                }
+            }
+
+            Context 'When the notification recipients are returned in a different order' {
+                BeforeAll {
+                    Mock -CommandName Get-TargetResource -MockWith {
+                        @{
+                            Ensure                       = 'Present'
+                            SyncNotificationRecipients   = @('b@contoso.com', 'a@contoso.com')
+                            StatusNotificationRecipients = @('d@contoso.com', 'c@contoso.com')
+                        }
+                    }
+                }
+
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure                       = 'Present'
+                            SyncNotificationRecipients   = @('a@contoso.com', 'b@contoso.com')
+                            StatusNotificationRecipients = @('c@contoso.com', 'd@contoso.com')
+                        }
+
+                        Test-TargetResource @testParams | Should -BeTrue
+                    }
+                }
+            }
+
+            <#
+                Get-TargetResource returns an empty array rather than $null for
+                these, but Test-TargetResource must not throw if it ever does.
+            #>
+            Context 'When a list property is not returned at all' {
+                BeforeAll {
+                    Mock -CommandName Get-TargetResource -MockWith {
+                        @{
+                            Ensure = 'Present'
+                        }
+                    }
+                }
+
+                It 'Should return the correct result without throwing' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure                       = 'Present'
+                            Languages                    = @('en')
+                            Products                     = @('Windows')
+                            Classifications              = @('E6CF1350-C01B-414D-A61F-263D14D133B4')
+                            SyncNotificationRecipients   = @('a@contoso.com')
+                            StatusNotificationRecipients = @('c@contoso.com')
+                        }
+
+                        Test-TargetResource @testParams | Should -BeFalse
+                    }
+                }
+            }
+
+            Context 'When a list property is requested as empty and the server has none' {
+                BeforeAll {
+                    Mock -CommandName Get-TargetResource -MockWith {
+                        @{
+                            Ensure                       = 'Present'
+                            SyncNotificationRecipients   = @()
+                            StatusNotificationRecipients = @()
+                        }
+                    }
+                }
+
+                It 'Should return the correct result' {
+                    InModuleScope -ScriptBlock {
+                        Set-StrictMode -Version 1.0
+
+                        $testParams = @{
+                            Ensure                       = 'Present'
+                            SyncNotificationRecipients   = @()
+                            StatusNotificationRecipients = @()
+                        }
+
+                        Test-TargetResource @testParams | Should -BeTrue
+                    }
+                }
+            }
+        }
     }
 
     Context 'When the resource is not in the desired state' {
@@ -850,8 +941,9 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
         }
 
         BeforeDiscovery {
-            # Settings not currently tested: ProxyServerUserName, ProxyServerCredential, ProxyServerBasicAuthentication, 'Languages', 'Products', 'Classifications', 'SynchronizeAutomatically'
+            # SetupCredential, SQLServer and Synchronize are not compared by Test-TargetResource
             $testCases = @(
+                'ContentDir'
                 'UpdateImprovementProgram'
                 'UpstreamServerName'
                 'UpstreamServerPort'
@@ -859,17 +951,36 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                 'UpstreamServerReplica'
                 'ProxyServerName'
                 'ProxyServerPort'
-                'SynchronizeAutomaticallyTimeOfDay'
-                'SynchronizationsPerDay'
+                'ProxyServerCredentialUserName'
+                'ProxyServerBasicAuthentication'
                 'DownloadUpdateBinariesAsNeeded'
                 'DownloadExpressPackages'
+                'GetContentFromMU'
+                'Languages'
+                'Products'
+                'Classifications'
+                'SynchronizeAutomatically'
+                'SynchronizeAutomaticallyTimeOfDay'
+                'SynchronizationsPerDay'
+                'AutoApproveWsusInfrastructureUpdates'
+                'AutoRefreshUpdateApprovals'
+                'AutoRefreshUpdateApprovalsDeclineExpired'
+                'ClientTargetingMode'
+                'DoDetailedRollup'
+                'SyncNotificationRecipients'
+                'StatusNotificationFrequency'
+                'StatusNotificationTimeOfDay'
+                'StatusNotificationRecipients'
+                'EmailLanguage'
                 'SmtpHostName'
                 'SmtpPort'
                 'SenderDisplayName'
                 'SenderEmailAddress'
-                'EmailLanguage'
-                'SyncNotificationRecipients'
-                'StatusNotificationRecipients'
+                'SmtpUserName'
+                'IIsDynamicCompression'
+                'BitsDownloadPriorityForeground'
+                'LocalPublishingMaxCabSize'
+                'MaxSimultaneousFileDownloads'
             )
         }
 
@@ -877,34 +988,49 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
             BeforeAll {
                 Mock -CommandName Get-TargetResource -MockWith {
                     $data = @{
-                        Ensure                            = 'Present'
-                        SetupCredential                   = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
-                        SQLServer                         = 'SQLServer'
-                        ContentDir                        = 'C:\WSUSContent\'
-                        UpdateImprovementProgram          = $true
-                        UpstreamServerName                = 'UpstreamServer'
-                        UpstreamServerPort                = $false
-                        UpstreamServerSSL                 = $false
-                        UpstreamServerReplica             = $false
-                        ProxyServerName                   = 'ProxyServer'
-                        ProxyServerPort                   = 8080
-                        Languages                         = '*'
-                        Products                          = @('Windows', 'Office')
-                        Classifications                   = @('E6CF1350-C01B-414D-A61F-263D14D133B4', 'E0789628-CE08-4437-BE74-2495B842F43B', '0FA1201D-4330-4FA8-8AE9-B877473B6441')
-                        SynchronizeAutomatically          = $true
-                        SynchronizeAutomaticallyTimeOfDay = '04:00:00'
-                        SynchronizationsPerDay            = 24
-                        ClientTargetingMode               = 'Client'
-                        DownloadUpdateBinariesAsNeeded    = $true
-                        DownloadExpressPackages           = $true
-                        SmtpHostName                      = 'smtp.contoso.com'
-                        SmtpPort                          = 25
-                        SenderDisplayName                 = 'WSUS Server'
-                        SenderEmailAddress                = 'wsus@contoso.com'
-                        EmailLanguage                     = 'en'
-                        SyncNotificationRecipients        = @('sync@contoso.com')
-                        StatusNotificationRecipients      = @('status@contoso.com')
+                        Ensure                                   = 'Present'
+                        SetupCredential                          = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+                        SQLServer                                = 'SQLServer'
+                        ContentDir                               = 'C:\WSUSContent\'
+                        UpdateImprovementProgram                 = $true
+                        UpstreamServerName                       = 'UpstreamServer'
+                        UpstreamServerPort                       = $false
+                        UpstreamServerSSL                        = $false
+                        UpstreamServerReplica                    = $false
+                        ProxyServerName                          = 'ProxyServer'
+                        ProxyServerPort                          = 8080
+                        ProxyServerCredentialUserName            = 'ProxyUser'
+                        ProxyServerBasicAuthentication           = $true
+                        DownloadUpdateBinariesAsNeeded           = $true
+                        DownloadExpressPackages                  = $true
+                        GetContentFromMU                         = $true
+                        Languages                                = '*'
+                        Products                                 = @('Windows', 'Office')
+                        Classifications                          = @('E6CF1350-C01B-414D-A61F-263D14D133B4', 'E0789628-CE08-4437-BE74-2495B842F43B', '0FA1201D-4330-4FA8-8AE9-B877473B6441')
+                        SynchronizeAutomatically                 = $true
+                        SynchronizeAutomaticallyTimeOfDay        = '04:00:00'
+                        SynchronizationsPerDay                   = 24
+                        AutoApproveWsusInfrastructureUpdates     = $true
+                        AutoRefreshUpdateApprovals               = $true
+                        AutoRefreshUpdateApprovalsDeclineExpired = $true
+                        ClientTargetingMode                      = 'Client'
+                        DoDetailedRollup                         = $true
+                        SyncNotificationRecipients               = @('sync@contoso.com')
+                        StatusNotificationFrequency              = 'Daily'
+                        StatusNotificationTimeOfDay              = '09:00:00'
+                        StatusNotificationRecipients             = @('status@contoso.com')
+                        EmailLanguage                            = 'en'
+                        SmtpHostName                             = 'smtp.contoso.com'
+                        SmtpPort                                 = 25
+                        SenderDisplayName                        = 'WSUS Server'
+                        SenderEmailAddress                       = 'wsus@contoso.com'
+                        SmtpUserName                             = 'SmtpUser'
+                        IIsDynamicCompression                    = $true
+                        BitsDownloadPriorityForeground           = $true
+                        LocalPublishingMaxCabSize                = 100
+                        MaxSimultaneousFileDownloads             = 10
                     }
+
                     $data.Remove($_)
 
                     return $data
@@ -920,33 +1046,47 @@ Describe 'DSC_UpdateServicesServer\Test-TargetResource' -Tag 'Test' {
                     Set-StrictMode -Version 1.0
 
                     $testParams = @{
-                        Ensure                            = 'Present'
-                        SetupCredential                   = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
-                        SQLServer                         = 'SQLServer'
-                        ContentDir                        = 'C:\WSUSContent\'
-                        UpdateImprovementProgram          = $true
-                        UpstreamServerName                = 'UpstreamServer'
-                        UpstreamServerPort                = $false
-                        UpstreamServerSSL                 = $false
-                        UpstreamServerReplica             = $false
-                        ProxyServerName                   = 'ProxyServer'
-                        ProxyServerPort                   = 8080
-                        Languages                         = '*'
-                        Products                          = @('Windows', 'Office')
-                        Classifications                   = @('E6CF1350-C01B-414D-A61F-263D14D133B4', 'E0789628-CE08-4437-BE74-2495B842F43B', '0FA1201D-4330-4FA8-8AE9-B877473B6441')
-                        SynchronizeAutomatically          = $true
-                        SynchronizeAutomaticallyTimeOfDay = '04:00:00'
-                        SynchronizationsPerDay            = 24
-                        ClientTargetingMode               = 'Client'
-                        DownloadUpdateBinariesAsNeeded    = $true
-                        DownloadExpressPackages           = $true
-                        SmtpHostName                      = 'smtp.contoso.com'
-                        SmtpPort                          = 25
-                        SenderDisplayName                 = 'WSUS Server'
-                        SenderEmailAddress                = 'wsus@contoso.com'
-                        EmailLanguage                     = 'en'
-                        SyncNotificationRecipients        = @('sync@contoso.com')
-                        StatusNotificationRecipients      = @('status@contoso.com')
+                        Ensure                                   = 'Present'
+                        SetupCredential                          = [System.Management.Automation.PSCredential]::new('foo', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+                        SQLServer                                = 'SQLServer'
+                        ContentDir                               = 'C:\WSUSContent\'
+                        UpdateImprovementProgram                 = $true
+                        UpstreamServerName                       = 'UpstreamServer'
+                        UpstreamServerPort                       = $false
+                        UpstreamServerSSL                        = $false
+                        UpstreamServerReplica                    = $false
+                        ProxyServerName                          = 'ProxyServer'
+                        ProxyServerPort                          = 8080
+                        ProxyServerCredential                    = [System.Management.Automation.PSCredential]::new('ProxyUser', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+                        ProxyServerBasicAuthentication           = $true
+                        DownloadUpdateBinariesAsNeeded           = $true
+                        DownloadExpressPackages                  = $true
+                        GetContentFromMU                         = $true
+                        Languages                                = '*'
+                        Products                                 = @('Windows', 'Office')
+                        Classifications                          = @('E6CF1350-C01B-414D-A61F-263D14D133B4', 'E0789628-CE08-4437-BE74-2495B842F43B', '0FA1201D-4330-4FA8-8AE9-B877473B6441')
+                        SynchronizeAutomatically                 = $true
+                        SynchronizeAutomaticallyTimeOfDay        = '04:00:00'
+                        SynchronizationsPerDay                   = 24
+                        AutoApproveWsusInfrastructureUpdates     = $true
+                        AutoRefreshUpdateApprovals               = $true
+                        AutoRefreshUpdateApprovalsDeclineExpired = $true
+                        ClientTargetingMode                      = 'Client'
+                        DoDetailedRollup                         = $true
+                        SyncNotificationRecipients               = @('sync@contoso.com')
+                        StatusNotificationFrequency              = 'Daily'
+                        StatusNotificationTimeOfDay              = '09:00:00'
+                        StatusNotificationRecipients             = @('status@contoso.com')
+                        EmailLanguage                            = 'en'
+                        SmtpHostName                             = 'smtp.contoso.com'
+                        SmtpPort                                 = 25
+                        SenderDisplayName                        = 'WSUS Server'
+                        SenderEmailAddress                       = 'wsus@contoso.com'
+                        EmailServerCredential                    = [System.Management.Automation.PSCredential]::new('SmtpUser', $('bar' | ConvertTo-SecureString -AsPlainText -Force))
+                        IIsDynamicCompression                    = $true
+                        BitsDownloadPriorityForeground           = $true
+                        LocalPublishingMaxCabSize                = 100
+                        MaxSimultaneousFileDownloads             = 10
                     }
 
                     Test-TargetResource @testParams | Should -BeFalse

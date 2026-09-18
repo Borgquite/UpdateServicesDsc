@@ -205,8 +205,8 @@ function Get-TargetResource
         Write-Verbose -Message $script:localizedData.GettingWsusClassifications
         if ($Classifications = @($WsusSubscription.GetUpdateClassifications().ID.Guid))
         {
-            if ($null -eq (Compare-Object -ReferenceObject ($Classifications | Sort-Object -Unique) -DifferenceObject `
-                (($WsusServer.GetUpdateClassifications().ID.Guid) | Sort-Object -Unique) -SyncWindow 0))
+            if ($null -eq (Compare-Object -ReferenceObject @($Classifications | Sort-Object -Unique) -DifferenceObject `
+                @(($WsusServer.GetUpdateClassifications().ID.Guid) | Sort-Object -Unique) -SyncWindow 0))
             {
                 $Classifications = @('*')
             }
@@ -221,8 +221,8 @@ function Get-TargetResource
         Write-Verbose -Message $script:localizedData.GettingWsusProducts
         if ($Products = @($WsusSubscription.GetUpdateCategories().Title) | Sort-Object -Unique)
         {
-            if ($null -eq (Compare-Object -ReferenceObject $Products -DifferenceObject `
-                (($WsusServer.GetUpdateCategories().Title) | Sort-Object -Unique) -SyncWindow 0))
+            if ($null -eq (Compare-Object -ReferenceObject @($Products) -DifferenceObject `
+                @(($WsusServer.GetUpdateCategories().Title) | Sort-Object -Unique) -SyncWindow 0))
             {
                 $Products = @('*')
             }
@@ -1975,8 +1975,8 @@ function Test-TargetResource
                     }
                     else
                     {
-                        if ($null -ne (Compare-Object -ReferenceObject ($Wsus.Languages | Sort-Object -Unique) `
-                                    -DifferenceObject ($Languages | Sort-Object -Unique) -SyncWindow 0))
+                        if ($null -ne (Compare-Object -ReferenceObject @($Wsus.Languages | Sort-Object -Unique) `
+                                    -DifferenceObject @($Languages | Sort-Object -Unique) -SyncWindow 0))
                         {
                             Write-Verbose -Message $script:localizedData.LanguageSetTestFailed
                             $testTargetResourceReturnValue = $false
@@ -2058,8 +2058,8 @@ function Test-TargetResource
                 }
 
 
-                if ($null -ne (Compare-Object -ReferenceObject ($Wsus.Products | Sort-Object -Unique) `
-                            -DifferenceObject ($productCollection | Sort-Object -Unique) -SyncWindow 0))
+                if ($null -ne (Compare-Object -ReferenceObject @($Wsus.Products | Sort-Object -Unique) `
+                            -DifferenceObject @($productCollection | Sort-Object -Unique) -SyncWindow 0))
                 {
                     Write-Verbose -Message $script:localizedData.ProductTestFailed
                     $testTargetResourceReturnValue = $false
@@ -2069,8 +2069,8 @@ function Test-TargetResource
             # Test Classifications
             if ($PSBoundParameters.ContainsKey('Classifications'))
             {
-                if ($null -ne (Compare-Object -ReferenceObject ($Wsus.Classifications | Sort-Object -Unique) `
-                            -DifferenceObject ($Classifications | Sort-Object -Unique) -SyncWindow 0))
+                if ($null -ne (Compare-Object -ReferenceObject @($Wsus.Classifications | Sort-Object -Unique) `
+                            -DifferenceObject @($Classifications | Sort-Object -Unique) -SyncWindow 0))
                 {
                     Write-Verbose -Message $script:localizedData.ClassificationsTestFailed
                     $testTargetResourceReturnValue = $false
@@ -2167,9 +2167,8 @@ function Test-TargetResource
         # Test Email notifications
         if ($PSBoundParameters.ContainsKey('SyncNotificationRecipients'))
         {
-            if (($Wsus.SyncNotificationRecipients -isnot [Array] -and $Wsus.SyncNotificationRecipients -ne $SyncNotificationRecipients) -or
-                ($Wsus.SyncNotificationRecipients -is [Array] -and $null -ne (Compare-Object -ReferenceObject $Wsus.SyncNotificationRecipients `
-                -DifferenceObject $SyncNotificationRecipients -SyncWindow 0)))
+            if ($null -ne (Compare-Object -ReferenceObject @($Wsus.SyncNotificationRecipients | Sort-Object) `
+                    -DifferenceObject @($SyncNotificationRecipients | Sort-Object) -SyncWindow 0))
             {
                 Write-Verbose -Message $script:localizedData.SyncNotificationRecipientsTestFailed
                 $testTargetResourceReturnValue = $false
@@ -2177,9 +2176,8 @@ function Test-TargetResource
         }
         if ($PSBoundParameters.ContainsKey('StatusNotificationRecipients'))
         {
-            if (($Wsus.StatusNotificationRecipients -isnot [Array] -and $Wsus.StatusNotificationRecipients -ne $StatusNotificationRecipients) -or
-                ($StatusNotificationRecipients -is [Array] -and $null -ne (Compare-Object -ReferenceObject $Wsus.StatusNotificationRecipients `
-                -DifferenceObject $StatusNotificationRecipients -SyncWindow 0)))
+            if ($null -ne (Compare-Object -ReferenceObject @($Wsus.StatusNotificationRecipients | Sort-Object) `
+                    -DifferenceObject @($StatusNotificationRecipients | Sort-Object) -SyncWindow 0))
             {
                 Write-Verbose -Message $script:localizedData.StatusNotificationRecipientsTestFailed
                 $testTargetResourceReturnValue = $false
