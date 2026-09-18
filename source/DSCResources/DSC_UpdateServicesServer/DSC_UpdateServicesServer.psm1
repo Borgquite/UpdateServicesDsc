@@ -88,7 +88,8 @@ function Get-TargetResource
             $SQLServer = $WsusDatabaseConfiguration.ServerName
             Write-Verbose -Message ($script:localizedData.SQLServerName -f $SQLServer)
         }
-        else {
+        else
+        {
             $SQLServer = ''
         }
 
@@ -296,7 +297,8 @@ function Get-TargetResource
                 Select-Object -ExpandProperty Address)
             Write-Verbose -Message ($script:localizedData.WsusSyncNotification -f $($SyncNotificationRecipients -join ','))
         }
-        else {
+        else
+        {
             $SyncNotificationRecipients = @()
         }
 
@@ -323,7 +325,8 @@ function Get-TargetResource
             Write-Verbose -Message ($script:localizedData.WsusStatusNotification -f $StatusNotificationFrequency, `
                 $StatusNotificationTimeOfDay, $($StatusNotificationRecipients -join ','))
         }
-        else {
+        else
+        {
             $StatusNotificationFrequency = ''
             $StatusNotificationTimeOfDay = ''
             $StatusNotificationRecipients = @()
@@ -1301,7 +1304,8 @@ function Set-TargetResource
                     switch ($Products)
                     {
                         # All Products
-                        '*' {
+                        '*'
+                        {
                             Write-Verbose -Message $script:localizedData.ConfiguringAllProducts
                             foreach ($prdct in $AllWsusProducts)
                             {
@@ -1310,7 +1314,8 @@ function Set-TargetResource
                             continue
                         }
                         # if Products property contains wildcard like "Windows*"
-                        {[System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($_)} {
+                        { [System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($_) }
+                        {
                             $wildcardPrdct = $_
                             Write-Verbose -Message $($script:localizedData.ConfiguringWildcardProducts -f $wildcardPrdct)
                             if ($wsusProduct = $allWsusProducts | Where-Object -FilterScript { $_.Title -like $wildcardPrdct })
@@ -1337,7 +1342,8 @@ function Set-TargetResource
                             Maybe with function
                         #>
 
-                        default {
+                        default
+                        {
                             Write-Verbose -Message $($script:localizedData.ConfiguringNameProduct -f $_)
                             $prdct = $_
                             if ($WsusProduct = $allWsusProducts | Where-Object -FilterScript { $_.Title -eq $prdct })
@@ -1836,7 +1842,6 @@ function Test-TargetResource
                     $testTargetResourceReturnValue = $false
                 }
             }
-
         }
 
         # If this is not a replica server
@@ -2007,13 +2012,15 @@ function Test-TargetResource
                 switch ($Products)
                 {
                     # All Products
-                    '*' {
+                    '*'
+                    {
                         Write-Verbose -Message $script:localizedData.GetAllProductForTest
                         $null = $productCollection.Add('*')
                         continue
                     }
                     # if Products property contains wild card like "Windows*"
-                    {[System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($_)} {
+                    { [System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($_) }
+                    {
                         $wildcardPrdct = $_
                         Write-Verbose -Message $($script:localizedData.GetWildCardProductForTest -f $wildcardPrdct)
                         if ($wsusProduct = $allWsusProducts | Where-Object -FilterScript { $_.Title -like $wildcardPrdct })
@@ -2040,7 +2047,8 @@ function Test-TargetResource
                         Maybe with function
                     #>
 
-                    default {
+                    default
+                    {
                         $prdct = $_
                         Write-Verbose -Message $($script:localizedData.GetNameProductForTest -f $prdct)
                         if ($wsusProduct = $allWsusProducts | Where-Object -FilterScript { $_.Title -eq $prdct })

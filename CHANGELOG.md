@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Use foreground priority for BITS downloads.
     - The maximum .cab file size (in megabytes) that Local Publishing will create.
     - The maximum number of concurrent update downloads.
+  - Added examples.
+- Internal UpdateServicesDsc.Common helper module
+  - Added, providing Test-WsusConfigured, which reports whether the WSUS Services
+    role has finished installing.
 
 ### Fixed
 
@@ -72,6 +76,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated parameter descriptions that still described the old behaviour of
     omitting a parameter to force a default, to describe how to explicitly
     turn a setting off instead.
+  - Resolve WsusUtil.exe before running the initial offline synchronization, so
+    that it no longer fails on a server where the WSUS Services role is already
+    configured but the initial synchronization has never completed.
+  - Do not throw when comparing a list setting that the server returns no value.
 - Stopped PDT.psm1 returning boolean 'true' alongside normal output when creating a process, now throws if the process fails to start.
 
 ## [1.3.0] - 2025-12-05
