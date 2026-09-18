@@ -110,6 +110,7 @@ ConfiguringWildcardProducts = Configuring products for wilcard expression produc
 NoWildcardProductFound  = No products found for wildcard expression product.
 ConfiguringNameProduct  = Configuring products for product name : {0}
 NoNameProductFound      = No product found for product name.
+NoProductsFoundError    = None of the products specified in the Products parameter ({0}) were found on the WSUS Server - leaving product selection unchanged.
 ConfiguringClassifications = Setting WSUS classifications.
 ClassificationNotFound  = Classification {0} not found.
 ConfiguringSyncSchedule = Setting WSUS synchronization schedule.

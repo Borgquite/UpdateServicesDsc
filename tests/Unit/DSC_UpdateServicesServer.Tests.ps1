@@ -1151,6 +1151,33 @@ Describe 'DSC_UpdateServicesServer\Set-TargetResource' -Tag 'Set' {
         }
     }
 
+    Context 'When none of the requested products exist on the server' {
+        BeforeAll {
+            <#
+                Return a real collection so that the resource can count what was
+                added to it, as the WSUS collection types do.
+            #>
+            Mock -CommandName New-Object -MockWith {
+                return [System.Collections.ArrayList]::new()
+            }
+        }
+
+        It 'Should throw the correct error without clearing the product selection' {
+            InModuleScope -ScriptBlock {
+                Set-StrictMode -Version 1.0
+
+                $testParams = @{
+                    Ensure   = 'Present'
+                    Products = @('NoSuchProduct')
+                }
+
+                $errorMessage = $script:localizedData.NoProductsFoundError -f 'NoSuchProduct'
+
+                { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage ('*' + $errorMessage + '*')
+            }
+        }
+    }
+
     Context 'When the resource should be ''Absent''' {
         It 'Should call the correct mocks' {
             InModuleScope -ScriptBlock {

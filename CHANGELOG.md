@@ -81,6 +81,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     that it no longer fails on a server where the WSUS Services role is already
     configured but the initial synchronization has never completed.
   - Do not throw when comparing a list setting that the server returns no value.
+  - Throw instead of clearing the product selection when none of the products
+    given in `Products` exist on the server, which previously stopped all
+    products synchronizing.
 - Stopped PDT.psm1 returning boolean 'true' alongside normal output when creating a process, now throws if the process fails to start.
 
 ## [1.3.0] - 2025-12-05

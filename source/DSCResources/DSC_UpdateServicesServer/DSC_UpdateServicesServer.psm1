@@ -1360,6 +1360,19 @@ function Set-TargetResource
                         }
                     }
 
+                    <#
+                        Refuse to save an empty collection. SetUpdateCategories
+                        would deselect every product and stop them synchronizing,
+                        which is not what was asked for when the requested
+                        products simply could not be resolved.
+                    #>
+                    if ($ProductCollection.Count -eq 0)
+                    {
+                        New-InvalidOperationException -Message (
+                            $script:localizedData.NoProductsFoundError -f ($Products -join ', ')
+                        )
+                    }
+
                     $wsusSubscription.SetUpdateCategories($ProductCollection)
                 }
 
