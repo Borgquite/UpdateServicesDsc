@@ -896,31 +896,37 @@ function Set-TargetResource
                 $WsusConfiguration.UseProxy = $true
                 $WsusConfiguration.ProxyName = $ProxyServerName
                 $WsusConfiguration.ProxyServerPort = $ProxyServerPort
-                if ($PSBoundParameters.ContainsKey('ProxyServerCredential'))
-                {
-                    if ($ProxyServerCredential)
-                    {
-                        Write-Verbose -Message $script:localizedData.ConfiguringProxyCred
-                        $WsusConfiguration.AnonymousProxyAccess = $false
-                        $WsusConfiguration.ProxyUserDomain = $ProxyServerCredential.GetNetworkCredential().Domain
-                        $WsusConfiguration.ProxyUserName = $ProxyServerCredential.GetNetworkCredential().UserName
-                        $WsusConfiguration.SetProxyPassword($ProxyServerCredential.GetNetworkCredential().Password)
-                        if ($PSBoundParameters.ContainsKey('ProxyServerBasicAuthentication'))
-                        {
-                            $WsusConfiguration.AllowProxyCredentialsOverNonSsl = $ProxyServerBasicAuthentication
-                        }
-                    }
-                    else
-                    {
-                        Write-Verbose -Message $script:localizedData.RemovingProxyCred
-                        $WsusConfiguration.AnonymousProxyAccess = $true
-                    }
-                }
             }
             else
             {
                 Write-Verbose -Message $script:localizedData.ConfiguringNoProxy
                 $WsusConfiguration.UseProxy = $false
+            }
+        }
+
+        # Only relevant if the server currently has a proxy server configured
+        if ($WsusConfiguration.UseProxy)
+        {
+            if ($PSBoundParameters.ContainsKey('ProxyServerCredential'))
+            {
+                if ($ProxyServerCredential)
+                {
+                    Write-Verbose -Message $script:localizedData.ConfiguringProxyCred
+                    $WsusConfiguration.AnonymousProxyAccess = $false
+                    $WsusConfiguration.ProxyUserDomain = $ProxyServerCredential.GetNetworkCredential().Domain
+                    $WsusConfiguration.ProxyUserName = $ProxyServerCredential.GetNetworkCredential().UserName
+                    $WsusConfiguration.SetProxyPassword($ProxyServerCredential.GetNetworkCredential().Password)
+                }
+                else
+                {
+                    Write-Verbose -Message $script:localizedData.RemovingProxyCred
+                    $WsusConfiguration.AnonymousProxyAccess = $true
+                }
+            }
+
+            if ($PSBoundParameters.ContainsKey('ProxyServerBasicAuthentication'))
+            {
+                $WsusConfiguration.AllowProxyCredentialsOverNonSsl = $ProxyServerBasicAuthentication
             }
         }
 
@@ -1036,38 +1042,40 @@ function Set-TargetResource
                 {
                     $WsusEmailNotificationConfiguration.StatusNotificationRecipients.Add($statusNotificationRecipient)
                 }
-                if ($PSBoundParameters.ContainsKey('StatusNotificationFrequency'))
-                {
-                    Write-Verbose -Message $script:localizedData.ConfiguringStatusNotificationFrequency
-                    $WsusEmailNotificationConfiguration.StatusNotificationFrequency = $StatusNotificationFrequency
-                }
-                if ($PSBoundParameters.ContainsKey('StatusNotificationTimeOfDay'))
-                {
-                    Write-Verbose -Message $script:localizedData.ConfiguringStatusNotificationTimeOfDay
-
-                    $currentDateTime = Get-Date
-
-                    # When Daylight Savings Time is in effect, StatusNotificationTimeOfDay needs to be set as UTC with the DST offset deducted
-                    # Must remove the DST offset before applying to set the actual time - see https://learn.microsoft.com/en-us/previous-versions/windows/desktop/aa351886(v=vs.85)
-                    if ($currentDateTime.IsDaylightSavingTime())
-                    {
-                        $currentTimeZone = Get-TimeZone
-
-                        # Convert StatusNotificationTimeOfDay from a String to a DateTimeOffset value defined in UTC
-                        $StatusNotificationTimeOfDayDateTimeOffset = [datetimeoffset]::Parse("$($StatusNotificationTimeOfDay)Z")
-
-                        # Subtract the currently active DST offset from the supplied DateTimeOffset to get UTC TimeOfDay as TimeSpan
-                        $StatusNotificationTimeOfDay = $StatusNotificationTimeOfDayDateTimeOffset - ([datetimeoffset]$currentDateTime).Offset + $currentTimeZone.BaseUtcOffset | Select-Object -ExpandProperty TimeOfDay
-                    }
-
-                    $WsusEmailNotificationConfiguration.StatusNotificationTimeOfDay = $StatusNotificationTimeOfDay
-                }
             }
             else
             {
                 Write-Verbose -Message $script:localizedData.ConfiguringNoStatusNotificationRecipients
                 $WsusEmailNotificationConfiguration.SendStatusNotification = $false
             }
+        }
+
+        if ($PSBoundParameters.ContainsKey('StatusNotificationFrequency'))
+        {
+            Write-Verbose -Message $script:localizedData.ConfiguringStatusNotificationFrequency
+            $WsusEmailNotificationConfiguration.StatusNotificationFrequency = $StatusNotificationFrequency
+        }
+
+        if ($PSBoundParameters.ContainsKey('StatusNotificationTimeOfDay'))
+        {
+            Write-Verbose -Message $script:localizedData.ConfiguringStatusNotificationTimeOfDay
+
+            $currentDateTime = Get-Date
+
+            # When Daylight Savings Time is in effect, StatusNotificationTimeOfDay needs to be set as UTC with the DST offset deducted
+            # Must remove the DST offset before applying to set the actual time - see https://learn.microsoft.com/en-us/previous-versions/windows/desktop/aa351886(v=vs.85)
+            if ($currentDateTime.IsDaylightSavingTime())
+            {
+                $currentTimeZone = Get-TimeZone
+
+                # Convert StatusNotificationTimeOfDay from a String to a DateTimeOffset value defined in UTC
+                $StatusNotificationTimeOfDayDateTimeOffset = [datetimeoffset]::Parse("$($StatusNotificationTimeOfDay)Z")
+
+                # Subtract the currently active DST offset from the supplied DateTimeOffset to get UTC TimeOfDay as TimeSpan
+                $StatusNotificationTimeOfDay = $StatusNotificationTimeOfDayDateTimeOffset - ([datetimeoffset]$currentDateTime).Offset + $currentTimeZone.BaseUtcOffset | Select-Object -ExpandProperty TimeOfDay
+            }
+
+            $WsusEmailNotificationConfiguration.StatusNotificationTimeOfDay = $StatusNotificationTimeOfDay
         }
 
 
@@ -1861,32 +1869,37 @@ function Test-TargetResource
                     Write-Verbose -Message $script:localizedData.ProxyPortTestFailed
                     $testTargetResourceReturnValue = $false
                 }
-                if ($PSBoundParameters.ContainsKey('ProxyServerCredential'))
-                {
-                    if ($ProxyServerCredential)
-                    {
-                        # Ensure that ProxyServerCredential is returned as string - if empty, otherwise returns $null
-                        if ($Wsus.ProxyServerCredentialUserName -ne [String]$ProxyServerCredential.UserName)
-                        {
-                            Write-Verbose -Message $script:localizedData.ProxyCredTestFailed
-                            $testTargetResourceReturnValue = $false
-                        }
+            }
+        }
 
-                        if ($PSBoundParameters.ContainsKey('ProxyServerBasicAuthentication'))
-                        {
-                            if ($Wsus.ProxyServerBasicAuthentication -ne $ProxyServerBasicAuthentication)
-                            {
-                                Write-Verbose -Message $script:localizedData.ProxyBasicAuthTestFailed
-                                $testTargetResourceReturnValue = $false
-                            }
-                        }
-                    }
-                    elseif ($Wsus.ProxyServerCredentialUserName)
+        # Only relevant if the server currently has a proxy server configured
+        if ($Wsus.ProxyServerName)
+        {
+            if ($PSBoundParameters.ContainsKey('ProxyServerCredential'))
+            {
+                if ($ProxyServerCredential)
+                {
+                    # Ensure that ProxyServerCredential is returned as string - if empty, otherwise returns $null
+                    if ($Wsus.ProxyServerCredentialUserName -ne [String]$ProxyServerCredential.UserName)
                     {
-                        # No credential requested, but one is currently set on the server
-                        Write-Verbose -Message $script:localizedData.ProxyCredSetTestFailed
+                        Write-Verbose -Message $script:localizedData.ProxyCredTestFailed
                         $testTargetResourceReturnValue = $false
                     }
+                }
+                elseif ($Wsus.ProxyServerCredentialUserName)
+                {
+                    # No credential requested, but one is currently set on the server
+                    Write-Verbose -Message $script:localizedData.ProxyCredSetTestFailed
+                    $testTargetResourceReturnValue = $false
+                }
+            }
+
+            if ($PSBoundParameters.ContainsKey('ProxyServerBasicAuthentication'))
+            {
+                if ($Wsus.ProxyServerBasicAuthentication -ne $ProxyServerBasicAuthentication)
+                {
+                    Write-Verbose -Message $script:localizedData.ProxyBasicAuthTestFailed
+                    $testTargetResourceReturnValue = $false
                 }
             }
         }
@@ -2171,26 +2184,26 @@ function Test-TargetResource
                 Write-Verbose -Message $script:localizedData.StatusNotificationRecipientsTestFailed
                 $testTargetResourceReturnValue = $false
             }
-            if ($StatusNotificationRecipients)
+        }
+
+        if ($PSBoundParameters.ContainsKey('StatusNotificationFrequency'))
+        {
+            if ($Wsus.StatusNotificationFrequency -ne $StatusNotificationFrequency)
             {
-                if ($PSBoundParameters.ContainsKey('StatusNotificationFrequency'))
-                {
-                    if ($Wsus.StatusNotificationFrequency -ne $StatusNotificationFrequency)
-                    {
-                        Write-Verbose -Message $script:localizedData.StatusNotificationFrequencyTestFailed
-                        $testTargetResourceReturnValue = $false
-                    }
-                }
-                if ($PSBoundParameters.ContainsKey('StatusNotificationTimeOfDay'))
-                {
-                    if ($Wsus.StatusNotificationTimeOfDay -ne $StatusNotificationTimeOfDay)
-                    {
-                        Write-Verbose -Message $script:localizedData.StatusNotificationTimeOfDayTestFailed
-                        $testTargetResourceReturnValue = $false
-                    }
-                }
+                Write-Verbose -Message $script:localizedData.StatusNotificationFrequencyTestFailed
+                $testTargetResourceReturnValue = $false
             }
         }
+
+        if ($PSBoundParameters.ContainsKey('StatusNotificationTimeOfDay'))
+        {
+            if ($Wsus.StatusNotificationTimeOfDay -ne $StatusNotificationTimeOfDay)
+            {
+                Write-Verbose -Message $script:localizedData.StatusNotificationTimeOfDayTestFailed
+                $testTargetResourceReturnValue = $false
+            }
+        }
+
         if ($PSBoundParameters.ContainsKey('EmailLanguage'))
         {
             if ($Wsus.EmailLanguage -ne $EmailLanguage)
@@ -2291,8 +2304,26 @@ function Test-TargetResource
     .SYNOPSIS
         Saves the WSUS configuration
 
+    .DESCRIPTION
+        Saves the WSUS configuration, retrying while the configuration is not yet
+        ready to be saved. Throws when the configuration could not be saved within
+        the given number of attempts.
+
     .PARAMETER Attempts
         The number of times to retry saving the configuration before failing.
+
+    .EXAMPLE
+        Save-WsusConfiguration
+
+        Saves the WSUS configuration, retrying up to the default number of attempts.
+
+    .INPUTS
+        None
+
+        This function does not accept pipeline input.
+
+    .OUTPUTS
+        None
 #>
 function Save-WsusConfiguration
 {
